@@ -13,6 +13,15 @@ export interface AgentMessage {
 	content: string;
 }
 
+export interface IpcEnvelope {
+	schema_version: string;
+	message_type: string;
+	run_id?: string;
+	payload_json: string;
+	ok?: boolean;
+	error?: string;
+}
+
 export interface KpiSnapshot {
 	activation: number;
 	ttfv_minutes: number;

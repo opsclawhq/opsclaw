@@ -72,3 +72,42 @@ Entrypoints:
 Result types:
 - `PreparedToolCall { rendered_command, risk_class, decision }`
 - `ToolBoundaryDecision::{AllowReadOnly, RequireApproval(ApprovalCard)}`
+
+## NDJSON IPC Contract (Phase 3 Preview)
+
+OpsClaw now includes a Unix socket IPC baseline with versioned NDJSON envelopes.
+
+### Socket Paths
+
+- runtime socket: `<dir>/runtime.sock`
+- control socket: `<dir>/control.sock`
+
+CLI entrypoint:
+
+- `opsclaw ipc serve-sockets --dir <path>`
+
+### Envelope Type
+
+- `oax_core::types::IpcEnvelope`
+  - `schema_version`
+  - `message_type`
+  - `run_id`
+  - `payload_json`
+  - `ok`
+  - `error`
+
+Current schema constant:
+
+- `oax_runtime::ipc::IPC_SCHEMA_VERSION = "opsclaw.ipc.v1alpha1"`
+
+### Runtime Message Types
+
+- `runtime.ping` -> `runtime.pong`
+- `runtime.forward` -> `runtime.forward.ack`
+
+### Control Message Types
+
+- `control.health` -> `control.health.ok`
+- `control.stop` -> `control.stop.ack` (requests socket server shutdown)
+
+Malformed input, invalid schema versions, and unsupported message types produce an `error` envelope.

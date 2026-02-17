@@ -196,3 +196,13 @@ All notable changes to this project will be documented in this file.
 - Engineering blog index and Phase 2 content-system post under `docs/blog/`.
 - Phase-by-phase `OpsClaw vs OpenClaw` comparison series scaffolding in `.content/series/opsclaw-vs-openclaw/`.
 - Dedicated LinkedIn and X draft artifacts for the comparison series across phases 0 through 5.
+
+## [0.1.0-phase3-slice1] - 2026-02-17
+
+### Added
+
+- `oax-core::types::IpcEnvelope` as the versioned NDJSON IPC contract.
+- `oax-runtime::ipc` module for schema validation, envelope parsing/serialization, and runtime/control handlers.
+- `opsclaw ipc serve-sockets --dir <path>` command with dual Unix sockets (`runtime.sock`, `control.sock`).
+- `opsclaw::ipc_socket` server with line-based NDJSON request/response behavior and stop/health control handling.
+- TypeScript SDK helper at `packages/sdk/src/ipc-client.ts` for sending one-request/one-response IPC calls over Unix sockets.

@@ -26,3 +26,12 @@ Phase 0 establishes a Rust workspace, type boundary generation, and a local infr
 - `oax-runtime::isolation` defines per-agent container spec validation and conversion to `bollard` create-container config with `network_mode=none` and scoped mounts.
 - `oax-runtime::mcp` exposes baseline MCP tool definitions and evaluates MCP-originated calls through risk + approval policy gates.
 - `opsclaw mcp serve-stdio` provides a stdio MCP transport endpoint for tool listing and policy-evaluated tool calls.
+
+## Phase 3 Foundations (Kickoff)
+
+- `oax-core::types::IpcEnvelope` defines the versioned NDJSON contract shared between Rust and TypeScript.
+- `oax-runtime::ipc` provides parse/serialize helpers and deterministic runtime/control message handlers.
+- `opsclaw ipc serve-sockets --dir <path>` starts dual Unix sockets:
+  - `runtime.sock` for runtime-plane request forwarding.
+  - `control.sock` for health and stop control messages.
+- `packages/sdk/src/ipc-client.ts` provides a Node SDK helper for one-request/one-response socket calls.

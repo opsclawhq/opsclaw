@@ -1,6 +1,8 @@
 use clap::{Parser, Subcommand};
+mod ipc_socket;
 mod mcp_stdio;
 mod skill_install;
+use std::path::Path;
 
 #[derive(Parser)]
 #[command(name = "opsclaw", version)]
@@ -13,6 +15,10 @@ struct Cli {
 
 #[derive(Subcommand)]
 enum Commands {
+    Ipc {
+        #[command(subcommand)]
+        command: IpcCommands,
+    },
     Mcp {
         #[command(subcommand)]
         command: McpCommands,
@@ -33,10 +39,26 @@ enum McpCommands {
     ServeStdio,
 }
 
+#[derive(Subcommand)]
+enum IpcCommands {
+    ServeSockets {
+        #[arg(long, default_value = ".opsclaw/sockets")]
+        dir: String,
+    },
+}
+
 fn main() {
     let cli = Cli::parse();
 
     match cli.command {
+        Some(Commands::Ipc {
+            command: IpcCommands::ServeSockets { dir },
+        }) => {
+            if let Err(err) = ipc_socket::serve_ipc_sockets(Path::new(dir.as_str())) {
+                eprintln!("ipc socket server failed: {err}");
+                std::process::exit(1);
+            }
+        }
         Some(Commands::Mcp {
             command: McpCommands::ServeStdio,
         }) => {

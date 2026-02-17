@@ -1,9 +1,10 @@
 pub mod alert;
 pub mod budget;
 pub mod cancellation;
-pub mod executor;
 pub mod events;
+pub mod executor;
 pub mod heartbeat;
+pub mod ipc;
 pub mod isolation;
 pub mod mcp;
 pub mod memory_store;
