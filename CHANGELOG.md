@@ -91,3 +91,11 @@ All notable changes to this project will be documented in this file.
 - `oax-runtime::cancellation` module for run-level cancellation control.
 - `CancellationRegistry` with `register_run`, `cancel`, `is_canceled`, `should_continue`, and `complete_run`.
 - Cancellation tests for active-run cancellation, unknown-run handling, and state cleanup.
+
+## [0.1.0-phase1-slice10] - 2026-02-17
+
+### Added
+
+- `oax-runtime::simulation` tagged ping-pong conversation harness.
+- `simulate_tagged_conversation` result contract with processed count, pending remainder, and budget-exhausted flag.
+- Simulation tests for clean pending drain and budget-stop behavior.
