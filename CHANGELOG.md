@@ -187,3 +187,12 @@ All notable changes to this project will be documented in this file.
 - `opsclaw::mcp_stdio` request/response handler for `tools/list` and `tools/call`.
 - JSON-line stdio server loop (`serve_stdio`) for MCP client interoperability.
 - Stdio MCP tests for list handling, call decision handling, malformed input errors, and forbidden-command responses.
+
+## [0.1.0-phase2-slice10] - 2026-02-17
+
+### Added
+
+- Structured docs tracks for users and contributors under `docs/user-guide/` and `docs/developer-guide/`.
+- Engineering blog index and Phase 2 content-system post under `docs/blog/`.
+- Phase-by-phase `OpsClaw vs OpenClaw` comparison series scaffolding in `.content/series/opsclaw-vs-openclaw/`.
+- Dedicated LinkedIn and X draft artifacts for the comparison series across phases 0 through 5.
