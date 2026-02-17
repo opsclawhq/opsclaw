@@ -160,3 +160,12 @@ All notable changes to this project will be documented in this file.
 - `compose_system_prompt` API for typed prompt composition from base instructions and `SoulProfile`.
 - `compose_system_prompt_from_file` API for loading SOUL markdown and composing a runtime prompt in one step.
 - Prompt tests covering identity inclusion, file-backed injection, and divergent outputs across different SOUL presets.
+
+## [0.1.0-phase2-slice7] - 2026-02-17
+
+### Added
+
+- `oax-runtime::isolation` module with typed per-agent container isolation contracts.
+- `build_agent_container_spec` and `validate_isolation_spec` enforcing `network_mode=none`, scoped mounts, and read-only root filesystem defaults.
+- `to_bollard_config` conversion into `bollard::models::ContainerCreateBody` for runtime container create paths.
+- Isolation tests covering secure defaults, host-network rejection, and expected `bollard` host config flags.
