@@ -12,3 +12,4 @@ Phase 0 establishes a Rust workspace, type boundary generation, and a local infr
 - `heartbeat`: per-agent liveness tracking with interval and missed-beat tolerance.
 - `memory_store`: JSON-backed per-agent key/value persistence across restarts.
 - `cancellation`: run-level cancellation registry for stopping in-progress agent work.
+- `simulation`: tagged ping-pong harness for phase-gate conversation drain/budget verification.
