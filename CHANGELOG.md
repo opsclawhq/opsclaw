@@ -108,3 +108,12 @@ All notable changes to this project will be documented in this file.
 - `prepare_tool_call` for credential injection plus risk/approval decision planning.
 - `filter_tool_output_for_llm` for secret-pattern leak blocking before LLM context ingress.
 - Boundary tests for missing secrets, approval requirement, and leak-block behavior.
+
+## [0.1.0-phase2-slice1] - 2026-02-17
+
+### Added
+
+- New `oax-skills` workspace crate for markdown skill parsing and policy validation.
+- Typed `SkillFrontmatter` + `SkillRiskClass` contract (`READ`, `SAFE_WRITE`, `DESTRUCTIVE`, `FORBIDDEN`).
+- `parse_skill_markdown`, `validate_required_bins`, and `validate_install_policy` APIs.
+- Tests for frontmatter parsing, required-bin validation, and destructive/trust policy enforcement.

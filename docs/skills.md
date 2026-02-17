@@ -12,3 +12,17 @@ Runtime and tools now use explicit risk classes:
 - `FORBIDDEN`: blocked commands that must never run
 
 Initial command classification is implemented in `oax_tools::risk::classify_command_risk`.
+
+## Skills Loader Baseline (Phase 2 Kickoff)
+
+The new `oax-skills` crate parses markdown skills with YAML frontmatter:
+
+- required frontmatter keys: `name`, `description`, `risk`
+- optional frontmatter keys: `required_bins`, `trust`, `rollback_template`
+- risk enum: `READ`, `SAFE_WRITE`, `DESTRUCTIVE`, `FORBIDDEN`
+
+Policy checks currently enforce:
+
+- required binaries must exist on host (`required_bins`)
+- missing `trust` rejects installation policy
+- `DESTRUCTIVE` skills require `rollback_template`

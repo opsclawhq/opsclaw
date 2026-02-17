@@ -3,6 +3,7 @@ members = [
   "crates/oax-core",
   "crates/oax-runtime",
   "crates/oax-llm",
+  "crates/oax-skills",
   "crates/oax-security",
   "crates/oax-tools",
   "crates/opsclaw"
