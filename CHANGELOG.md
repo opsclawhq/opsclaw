@@ -59,3 +59,11 @@ All notable changes to this project will be documented in this file.
 - Interval-based due-agent detection for heartbeat scheduling.
 - Missed-heartbeat tolerance checks via `is_alive`.
 - Unit tests for unknown-agent errors, liveness window behavior, and due-agent reporting.
+
+## [0.1.0-phase1-slice6] - 2026-02-17
+
+### Added
+
+- `oax-runtime::memory_store` JSON-backed persistent memory implementation.
+- `JsonFileMemoryStore` API with `new`, `put`, `get`, and `save` methods.
+- Persistence tests for missing-file bootstrap, overwrite behavior, and reload survival.
