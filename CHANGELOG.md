@@ -25,3 +25,11 @@ All notable changes to this project will be documented in this file.
 - Security tests for secret injection and leak detection behavior.
 - Tool policy tests for read-only vs mutating command detection.
 - Regenerated TypeScript interface output including new core contract types.
+
+## [0.1.0-phase1-slice2] - 2026-02-17
+
+### Added
+
+- `oax-runtime::executor` queue manager for per-agent sequential message handling.
+- Pending counter accounting helpers for queued and processed work tracking.
+- Runtime unit tests covering per-agent FIFO ordering and pending lifecycle.
