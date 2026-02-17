@@ -856,6 +856,8 @@ dependencies = [
  "oax-runtime",
  "oax-security",
  "oax-skills",
+ "serde",
+ "serde_json",
  "tempfile",
 ]
 
