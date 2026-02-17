@@ -99,3 +99,12 @@ All notable changes to this project will be documented in this file.
 - `oax-runtime::simulation` tagged ping-pong conversation harness.
 - `simulate_tagged_conversation` result contract with processed count, pending remainder, and budget-exhausted flag.
 - Simulation tests for clean pending drain and budget-stop behavior.
+
+## [0.1.0-phase1-slice11] - 2026-02-17
+
+### Added
+
+- `oax-runtime::tool_boundary` module for integrated command-boundary safety checks.
+- `prepare_tool_call` for credential injection plus risk/approval decision planning.
+- `filter_tool_output_for_llm` for secret-pattern leak blocking before LLM context ingress.
+- Boundary tests for missing secrets, approval requirement, and leak-block behavior.

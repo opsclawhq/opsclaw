@@ -57,3 +57,18 @@ Command-level risk metadata is now exposed via:
 - `oax_tools::risk::classify_command_risk(command)`
 
 This baseline classification feeds approval and policy decisions for runtime execution.
+
+## Tool Boundary Safety Contract (Phase 1 Preview)
+
+Runtime now provides a tool-boundary contract that combines:
+- credential injection for command templates
+- risk/approval planning for command execution
+- leak blocking for tool output before LLM context
+
+Entrypoints:
+- `oax_runtime::tool_boundary::prepare_tool_call(command_template, secrets, rollback_template)`
+- `oax_runtime::tool_boundary::filter_tool_output_for_llm(output, leak_patterns)`
+
+Result types:
+- `PreparedToolCall { rendered_command, risk_class, decision }`
+- `ToolBoundaryDecision::{AllowReadOnly, RequireApproval(ApprovalCard)}`

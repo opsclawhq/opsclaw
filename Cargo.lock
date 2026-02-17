@@ -378,6 +378,8 @@ name = "oax-runtime"
 version = "0.1.0"
 dependencies = [
  "oax-core",
+ "oax-security",
+ "oax-tools",
  "serde",
  "serde_json",
  "tempfile",
