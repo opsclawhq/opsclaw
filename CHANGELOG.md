@@ -75,3 +75,11 @@ All notable changes to this project will be documented in this file.
 - `oax-tools::approval` HITL planning module for mutating command gating.
 - `ExecutionDecision` enum and `ApprovalCard` struct with command/effect/blast-radius/rollback fields.
 - Approval planner tests covering read-only bypass, approval-card generation, and explicit rollback template usage.
+
+## [0.1.0-phase1-slice8] - 2026-02-17
+
+### Added
+
+- `oax-tools::risk` command risk classification module.
+- `RiskClass` enum (`Read`, `SafeWrite`, `Destructive`, `Forbidden`).
+- Risk classifier tests for read-only, safe-write, destructive, and forbidden command cases.
