@@ -26,3 +26,11 @@ Policy checks currently enforce:
 - required binaries must exist on host (`required_bins`)
 - missing `trust` rejects installation policy
 - `DESTRUCTIVE` skills require `rollback_template`
+
+## Source Precedence (Phase 2)
+
+Skill resolution precedence is now implemented as:
+
+`bundled < global < workspace`
+
+If the same skill name exists in multiple roots, the workspace-local file wins, then global, then bundled.

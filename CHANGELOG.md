@@ -117,3 +117,11 @@ All notable changes to this project will be documented in this file.
 - Typed `SkillFrontmatter` + `SkillRiskClass` contract (`READ`, `SAFE_WRITE`, `DESTRUCTIVE`, `FORBIDDEN`).
 - `parse_skill_markdown`, `validate_required_bins`, and `validate_install_policy` APIs.
 - Tests for frontmatter parsing, required-bin validation, and destructive/trust policy enforcement.
+
+## [0.1.0-phase2-slice2] - 2026-02-17
+
+### Added
+
+- `oax-skills::precedence` resolver for skill source ordering.
+- `resolve_skill_catalog` with deterministic override chain: bundled -> global -> workspace.
+- Precedence tests for workspace/global override behavior and missing-root handling.
