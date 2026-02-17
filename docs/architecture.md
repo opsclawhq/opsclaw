@@ -20,3 +20,4 @@ Phase 0 establishes a Rust workspace, type boundary generation, and a local infr
 - `oax-skills`: markdown frontmatter parser and policy validator (`required_bins`, trust, rollback rules).
 - precedence resolver implemented for `bundled < global < workspace` skill source ordering.
 - CLI install path wired: `opsclaw skill install <path>` validates then installs into `~/.opsclaw/skills/`.
+- bundled seed skills added under `skills/bundled/` for core ops workflows.

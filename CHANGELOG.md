@@ -133,3 +133,11 @@ All notable changes to this project will be documented in this file.
 - `opsclaw skill install <path>` CLI command.
 - Install helper that validates trust/risk policy and required binaries before writing to `~/.opsclaw/skills/`.
 - Unit tests for successful install and policy/binary rejection cases.
+
+## [0.1.0-phase2-slice4] - 2026-02-17
+
+### Added
+
+- Five bundled seed skills in `skills/bundled/` (K8s Pod Debugger, Log Analyzer, Incident Responder, PR Reviewer, Cost Optimizer).
+- `bundled_seed_skill_paths` helper in `oax-skills` for bundled-skill discovery.
+- Seed-skill discovery test coverage and policy-compatible frontmatter defaults.

@@ -1,5 +1,7 @@
 use serde::Deserialize;
 pub mod precedence;
+use std::fs;
+use std::path::PathBuf;
 
 #[derive(Debug, Clone, PartialEq, Eq, Deserialize)]
 #[serde(rename_all = "SCREAMING_SNAKE_CASE")]
@@ -98,10 +100,30 @@ pub fn validate_install_policy(frontmatter: &SkillFrontmatter) -> Result<(), Str
     Ok(())
 }
 
+pub fn bundled_seed_skill_paths() -> Vec<PathBuf> {
+    let bundled_root = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../skills/bundled");
+    let mut out = Vec::new();
+
+    if let Ok(entries) = fs::read_dir(&bundled_root) {
+        for entry in entries.flatten() {
+            let path = entry.path();
+            if path.extension().and_then(|e| e.to_str()) == Some("md") {
+                out.push(path);
+            }
+        }
+    }
+
+    out.sort();
+    out
+}
+
 #[cfg(test)]
 mod tests {
+    use std::collections::HashSet;
+
     use super::{
-        parse_skill_markdown, validate_install_policy, validate_required_bins, SkillRiskClass,
+        bundled_seed_skill_paths, parse_skill_markdown, validate_install_policy,
+        validate_required_bins, SkillRiskClass,
     };
 
     #[test]
@@ -173,5 +195,21 @@ body
 "#;
         let doc = parse_skill_markdown(input).expect("parses");
         validate_install_policy(&doc.frontmatter).expect("policy should pass");
+    }
+
+    #[test]
+    fn bundled_seed_skills_are_discoverable() {
+        let paths = bundled_seed_skill_paths();
+        let names: HashSet<String> = paths
+            .iter()
+            .filter_map(|p| p.file_name().and_then(|n| n.to_str()))
+            .map(|s| s.to_string())
+            .collect();
+
+        assert!(names.contains("k8s-pod-debugger.md"));
+        assert!(names.contains("log-analyzer.md"));
+        assert!(names.contains("incident-responder.md"));
+        assert!(names.contains("pr-reviewer.md"));
+        assert!(names.contains("cost-optimizer.md"));
     }
 }
