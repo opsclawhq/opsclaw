@@ -23,3 +23,24 @@ OpsClaw runtime now includes a parser that normalizes webhook payloads from Page
 - failure mode: unknown/unsupported shapes return an error string
 
 This is the Phase 1 parser contract used by upcoming webhook endpoint wiring.
+
+## HITL Approval Card Contract (Phase 1 Preview)
+
+Mutating commands are now planned through approval-card generation before execution.
+
+### Runtime Types
+
+- `oax_tools::approval::ExecutionDecision`
+  - `AllowReadOnly`
+  - `RequireApproval(ApprovalCard)`
+- `oax_tools::approval::ApprovalCard`
+  - `command`
+  - `expected_effect`
+  - `blast_radius`
+  - `rollback_steps`
+
+### Planner Entrypoint
+
+- `oax_tools::approval::plan_command_execution(command, rollback_template)`
+- read-only commands bypass HITL (`AllowReadOnly`)
+- mutating commands require approval with a populated card
