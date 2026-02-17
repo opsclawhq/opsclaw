@@ -44,3 +44,16 @@ Mutating commands are now planned through approval-card generation before execut
 - `oax_tools::approval::plan_command_execution(command, rollback_template)`
 - read-only commands bypass HITL (`AllowReadOnly`)
 - mutating commands require approval with a populated card
+
+## Risk Classification Contract (Phase 1 Preview)
+
+Command-level risk metadata is now exposed via:
+
+- `oax_tools::risk::RiskClass`
+  - `Read`
+  - `SafeWrite`
+  - `Destructive`
+  - `Forbidden`
+- `oax_tools::risk::classify_command_risk(command)`
+
+This baseline classification feeds approval and policy decisions for runtime execution.
