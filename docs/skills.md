@@ -46,3 +46,13 @@ Install-time checks:
 - trust policy is satisfied
 - destructive skills include rollback template
 - required binaries exist on host
+
+## Bundled Seed Skills (Phase 2)
+
+Bundled skills now ship at `skills/bundled/`:
+
+- `k8s-pod-debugger.md`
+- `log-analyzer.md`
+- `incident-responder.md`
+- `pr-reviewer.md`
+- `cost-optimizer.md`
