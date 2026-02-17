@@ -50,3 +50,12 @@ All notable changes to this project will be documented in this file.
 - `AlertPayload` normalized enum with source-specific fields for incident routing.
 - Parser tests for PagerDuty payloads, Prometheus payloads, and unsupported payload rejection.
 - Prometheus compatibility behavior for missing `annotations` and severity fallback to top-level `status`.
+
+## [0.1.0-phase1-slice5] - 2026-02-17
+
+### Added
+
+- `oax-runtime::heartbeat` registry for agent liveness tracking.
+- Interval-based due-agent detection for heartbeat scheduling.
+- Missed-heartbeat tolerance checks via `is_alive`.
+- Unit tests for unknown-agent errors, liveness window behavior, and due-agent reporting.

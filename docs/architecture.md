@@ -1,3 +1,12 @@
 # Architecture
 
 Phase 0 establishes a Rust workspace, type boundary generation, and a local infrastructure stack.
+
+## Phase 1 Runtime Primitives (In Progress)
+
+- `router`: parses `[@agent: payload]` tags for TinyClaw-style inter-agent routing.
+- `executor`: per-agent FIFO queue manager with pending counter accounting.
+- `budget`: hard conversation ceiling defaults (50 messages) for runaway-loop control.
+- `events`: append-only JSONL journal for audit replay.
+- `alert`: payload normalization for PagerDuty and Prometheus webhook formats.
+- `heartbeat`: per-agent liveness tracking with interval and missed-beat tolerance.
