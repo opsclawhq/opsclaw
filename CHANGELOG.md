@@ -67,3 +67,11 @@ All notable changes to this project will be documented in this file.
 - `oax-runtime::memory_store` JSON-backed persistent memory implementation.
 - `JsonFileMemoryStore` API with `new`, `put`, `get`, and `save` methods.
 - Persistence tests for missing-file bootstrap, overwrite behavior, and reload survival.
+
+## [0.1.0-phase1-slice7] - 2026-02-17
+
+### Added
+
+- `oax-tools::approval` HITL planning module for mutating command gating.
+- `ExecutionDecision` enum and `ApprovalCard` struct with command/effect/blast-radius/rollback fields.
+- Approval planner tests covering read-only bypass, approval-card generation, and explicit rollback template usage.
