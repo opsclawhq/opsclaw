@@ -4,6 +4,7 @@ pub mod cancellation;
 pub mod executor;
 pub mod events;
 pub mod heartbeat;
+pub mod isolation;
 pub mod memory_store;
 pub mod prompt;
 pub mod router;
