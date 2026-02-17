@@ -8,5 +8,6 @@ license = "Apache-2.0"
 path = "src/lib.rs"
 
 [dependencies]
+async-trait = "0.1.89"
 serde = { version = "1.0.228", features = ["derive"] }
 typeshare = "1.0.5"
