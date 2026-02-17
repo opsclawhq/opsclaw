@@ -151,3 +151,12 @@ All notable changes to this project will be documented in this file.
 - `preset_soul_paths` helper for bundled preset discovery under `souls/presets/`.
 - Bundled SOUL presets for Remy (SRE), Ferris (Deploy Bot), and Wren (Cost Optimizer).
 - SOUL parser/discovery tests for valid parse, frontmatter rejection, file loading, and preset discovery.
+
+## [0.1.0-phase2-slice6] - 2026-02-17
+
+### Added
+
+- `oax-runtime::prompt` module for runtime system-prompt composition with SOUL identity injection.
+- `compose_system_prompt` API for typed prompt composition from base instructions and `SoulProfile`.
+- `compose_system_prompt_from_file` API for loading SOUL markdown and composing a runtime prompt in one step.
+- Prompt tests covering identity inclusion, file-backed injection, and divergent outputs across different SOUL presets.

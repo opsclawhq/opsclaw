@@ -69,3 +69,10 @@ Bundled SOUL presets currently include:
 - `remy.md` (SRE)
 - `ferris.md` (Deploy Bot)
 - `wren.md` (Cost Optimizer)
+
+Runtime now injects SOUL identity into the final system prompt via `oax-runtime::prompt`:
+
+- `compose_system_prompt(base, soul)` for direct typed composition
+- `compose_system_prompt_from_file(base, soul_path)` for file-backed composition
+
+This makes SOUL differences explicit in prompt text and testable end-to-end.
