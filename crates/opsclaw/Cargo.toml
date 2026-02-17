@@ -14,3 +14,7 @@ oax-core = { path = "../oax-core" }
 oax-llm = { path = "../oax-llm" }
 oax-runtime = { path = "../oax-runtime" }
 oax-security = { path = "../oax-security" }
+oax-skills = { path = "../oax-skills" }
+
+[dev-dependencies]
+tempfile = "3.25.0"

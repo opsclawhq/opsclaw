@@ -125,3 +125,11 @@ All notable changes to this project will be documented in this file.
 - `oax-skills::precedence` resolver for skill source ordering.
 - `resolve_skill_catalog` with deterministic override chain: bundled -> global -> workspace.
 - Precedence tests for workspace/global override behavior and missing-root handling.
+
+## [0.1.0-phase2-slice3] - 2026-02-17
+
+### Added
+
+- `opsclaw skill install <path>` CLI command.
+- Install helper that validates trust/risk policy and required binaries before writing to `~/.opsclaw/skills/`.
+- Unit tests for successful install and policy/binary rejection cases.
