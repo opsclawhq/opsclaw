@@ -169,3 +169,12 @@ All notable changes to this project will be documented in this file.
 - `build_agent_container_spec` and `validate_isolation_spec` enforcing `network_mode=none`, scoped mounts, and read-only root filesystem defaults.
 - `to_bollard_config` conversion into `bollard::models::ContainerCreateBody` for runtime container create paths.
 - Isolation tests covering secure defaults, host-network rejection, and expected `bollard` host config flags.
+
+## [0.1.0-phase2-slice8] - 2026-02-17
+
+### Added
+
+- `oax-runtime::mcp` module with typed MCP tool descriptor and call-decision contracts.
+- `opsclaw_mcp_tools` baseline catalog for `shell`, `http`, `file`, `kubectl`, and `git`.
+- `evaluate_mcp_call` policy bridge that applies risk classification and approval planning to MCP-originated commands.
+- MCP tests for tool catalog coverage, read-only allow path, mutating approval path, and forbidden-command rejection.

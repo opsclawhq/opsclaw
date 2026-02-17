@@ -24,3 +24,4 @@ Phase 0 establishes a Rust workspace, type boundary generation, and a local infr
 - `oax-core::soul` provides typed SOUL profile parsing/loading plus bundled preset discovery from `souls/presets/`.
 - `oax-runtime::prompt` composes runtime system prompts by injecting SOUL identity metadata and SOUL instructions.
 - `oax-runtime::isolation` defines per-agent container spec validation and conversion to `bollard` create-container config with `network_mode=none` and scoped mounts.
+- `oax-runtime::mcp` exposes baseline MCP tool definitions and evaluates MCP-originated calls through risk + approval policy gates.

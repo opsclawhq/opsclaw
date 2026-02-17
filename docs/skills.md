@@ -76,3 +76,15 @@ Runtime now injects SOUL identity into the final system prompt via `oax-runtime:
 - `compose_system_prompt_from_file(base, soul_path)` for file-backed composition
 
 This makes SOUL differences explicit in prompt text and testable end-to-end.
+
+## MCP Contract Baseline (Phase 2)
+
+Runtime now includes a transport-agnostic MCP contract in `oax-runtime::mcp`:
+
+- `opsclaw_mcp_tools` exposes baseline tool definitions (`shell`, `http`, `file`, `kubectl`, `git`)
+- `evaluate_mcp_call` routes MCP-originated commands through existing risk and approval policy
+
+Decision outcomes are explicit:
+- allow read-only calls
+- require approval for mutating calls
+- reject forbidden commands
