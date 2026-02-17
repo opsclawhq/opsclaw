@@ -56,3 +56,16 @@ Bundled skills now ship at `skills/bundled/`:
 - `incident-responder.md`
 - `pr-reviewer.md`
 - `cost-optimizer.md`
+
+## SOUL Profiles (Phase 2)
+
+Bot identity is now represented by typed SOUL markdown profiles in `oax-core`:
+
+- `parse_soul_markdown` parses frontmatter + system prompt body.
+- `load_soul_file` loads profile files directly for user customization flows.
+- `preset_soul_paths` discovers bundled presets under `souls/presets/`.
+
+Bundled SOUL presets currently include:
+- `remy.md` (SRE)
+- `ferris.md` (Deploy Bot)
+- `wren.md` (Cost Optimizer)

@@ -141,3 +141,13 @@ All notable changes to this project will be documented in this file.
 - Five bundled seed skills in `skills/bundled/` (K8s Pod Debugger, Log Analyzer, Incident Responder, PR Reviewer, Cost Optimizer).
 - `bundled_seed_skill_paths` helper in `oax-skills` for bundled-skill discovery.
 - Seed-skill discovery test coverage and policy-compatible frontmatter defaults.
+
+## [0.1.0-phase2-slice5] - 2026-02-17
+
+### Added
+
+- `oax-core::soul` module with typed SOUL profile contract (`name`, `role`, `personality`, `communication_style`, `avatar`, `system_prompt`).
+- `parse_soul_markdown` for YAML frontmatter + body parsing and `load_soul_file` for file-backed profile loading.
+- `preset_soul_paths` helper for bundled preset discovery under `souls/presets/`.
+- Bundled SOUL presets for Remy (SRE), Ferris (Deploy Bot), and Wren (Cost Optimizer).
+- SOUL parser/discovery tests for valid parse, frontmatter rejection, file loading, and preset discovery.

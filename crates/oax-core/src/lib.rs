@@ -1,6 +1,7 @@
 pub mod agent;
 pub mod memory;
 pub mod model;
+pub mod soul;
 pub mod tool;
 pub mod types;
 
