@@ -33,3 +33,11 @@ All notable changes to this project will be documented in this file.
 - `oax-runtime::executor` queue manager for per-agent sequential message handling.
 - Pending counter accounting helpers for queued and processed work tracking.
 - Runtime unit tests covering per-agent FIFO ordering and pending lifecycle.
+
+## [0.1.0-phase1-slice3] - 2026-02-17
+
+### Added
+
+- `oax-runtime::events` JSONL event journal with append and replay APIs.
+- `RuntimeEvent` schema containing `schema_version`, `event_type`, `run_id`, and payload.
+- Event journal tests for ordered replay and missing-file behavior.
