@@ -1,4 +1,5 @@
 use serde::Deserialize;
+pub mod precedence;
 
 #[derive(Debug, Clone, PartialEq, Eq, Deserialize)]
 #[serde(rename_all = "SCREAMING_SNAKE_CASE")]

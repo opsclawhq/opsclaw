@@ -18,3 +18,4 @@ Phase 0 establishes a Rust workspace, type boundary generation, and a local infr
 ## Phase 2 Foundations (Kickoff)
 
 - `oax-skills`: markdown frontmatter parser and policy validator (`required_bins`, trust, rollback rules).
+- precedence resolver implemented for `bundled < global < workspace` skill source ordering.
