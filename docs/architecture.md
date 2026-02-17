@@ -13,3 +13,4 @@ Phase 0 establishes a Rust workspace, type boundary generation, and a local infr
 - `memory_store`: JSON-backed per-agent key/value persistence across restarts.
 - `cancellation`: run-level cancellation registry for stopping in-progress agent work.
 - `simulation`: tagged ping-pong harness for phase-gate conversation drain/budget verification.
+- `tool_boundary`: credential injection + risk/approval + leak-output filtering at execution boundary.
