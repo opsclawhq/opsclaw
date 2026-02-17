@@ -19,5 +19,7 @@ All notable changes to this project will be documented in this file.
 
 - `oax-core` contract modules for `agent`, `model`, `tool`, and `memory`.
 - `oax-runtime` modules for message tag routing, conversation budget enforcement, and task state transitions.
+- `oax-security` modules for credential placeholder injection and secret leak pattern scanning.
 - Runtime tests for routing parsing, budget ceilings, and transition guards.
+- Security tests for secret injection and leak detection behavior.
 - Regenerated TypeScript interface output including new core contract types.

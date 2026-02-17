@@ -8,4 +8,5 @@ license = "Apache-2.0"
 path = "src/lib.rs"
 
 [dependencies]
+aho-corasick = "1.1.4"
 oax-core = { path = "../oax-core" }
