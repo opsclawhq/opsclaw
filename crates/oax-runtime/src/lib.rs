@@ -5,6 +5,7 @@ pub mod executor;
 pub mod events;
 pub mod heartbeat;
 pub mod memory_store;
+pub mod prompt;
 pub mod router;
 pub mod simulation;
 pub mod state;

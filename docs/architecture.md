@@ -22,3 +22,4 @@ Phase 0 establishes a Rust workspace, type boundary generation, and a local infr
 - CLI install path wired: `opsclaw skill install <path>` validates then installs into `~/.opsclaw/skills/`.
 - bundled seed skills added under `skills/bundled/` for core ops workflows.
 - `oax-core::soul` provides typed SOUL profile parsing/loading plus bundled preset discovery from `souls/presets/`.
+- `oax-runtime::prompt` composes runtime system prompts by injecting SOUL identity metadata and SOUL instructions.
