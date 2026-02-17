@@ -1,0 +1,15 @@
+[workspace]
+members = [
+  "crates/oax-core",
+  "crates/oax-runtime",
+  "crates/oax-llm",
+  "crates/oax-security",
+  "crates/opsclaw"
+]
+resolver = "2"
+
+[workspace.package]
+edition = "2021"
+license = "Apache-2.0"
+version = "0.1.0"
+

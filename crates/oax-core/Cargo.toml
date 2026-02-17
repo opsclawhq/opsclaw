@@ -1,0 +1,12 @@
+[package]
+name = "oax-core"
+version = "0.1.0"
+edition = "2021"
+license = "Apache-2.0"
+
+[lib]
+path = "src/lib.rs"
+
+[dependencies]
+serde = { version = "1.0.228", features = ["derive"] }
+typeshare = "1.0.5"

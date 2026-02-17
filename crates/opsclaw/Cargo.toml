@@ -1,0 +1,16 @@
+[package]
+name = "opsclaw"
+version = "0.1.0"
+edition = "2021"
+license = "Apache-2.0"
+
+[[bin]]
+name = "opsclaw"
+path = "src/main.rs"
+
+[dependencies]
+clap = { version = "4.5.31", features = ["derive"] }
+oax-core = { path = "../oax-core" }
+oax-llm = { path = "../oax-llm" }
+oax-runtime = { path = "../oax-runtime" }
+oax-security = { path = "../oax-security" }
