@@ -20,6 +20,12 @@ gh project create --owner opsclawhq --title "OpsClaw Delivery"
 gh project create --owner @me --title "OpsClaw Delivery"
 ```
 
+If the repository has no default branch yet, create it first:
+
+```bash
+git push origin codex/phase-0-workspace-foundations:main
+```
+
 ## 3. Add required project fields
 
 Create these fields on the board:
