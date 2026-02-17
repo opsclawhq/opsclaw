@@ -10,3 +10,5 @@ Phase 0 establishes a Rust workspace, type boundary generation, and a local infr
 - `events`: append-only JSONL journal for audit replay.
 - `alert`: payload normalization for PagerDuty and Prometheus webhook formats.
 - `heartbeat`: per-agent liveness tracking with interval and missed-beat tolerance.
+- `memory_store`: JSON-backed per-agent key/value persistence across restarts.
+- `cancellation`: run-level cancellation registry for stopping in-progress agent work.
