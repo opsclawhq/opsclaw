@@ -41,3 +41,12 @@ All notable changes to this project will be documented in this file.
 - `oax-runtime::events` JSONL event journal with append and replay APIs.
 - `RuntimeEvent` schema containing `schema_version`, `event_type`, `run_id`, and payload.
 - Event journal tests for ordered replay and missing-file behavior.
+
+## [0.1.0-phase1-slice4] - 2026-02-17
+
+### Added
+
+- `oax-runtime::alert` parser for PagerDuty and Prometheus webhook payload shapes.
+- `AlertPayload` normalized enum with source-specific fields for incident routing.
+- Parser tests for PagerDuty payloads, Prometheus payloads, and unsupported payload rejection.
+- Prometheus compatibility behavior for missing `annotations` and severity fallback to top-level `status`.
