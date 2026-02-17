@@ -12,6 +12,8 @@ Plan: `docs/plans/2026-02-17-phase-1-core-safety-slice-1.md`
 5. RED: `cargo test -p oax-security` failed with 2 injector test failures while `inject` was unimplemented.
 6. GREEN: implemented credential injection placeholder replacement and missing-secret reporting; `cargo test -p oax-security` passed.
 7. Implemented Aho-Corasick leak detector and verified leak detection tests.
+8. RED: `cargo test -p oax-tools` failed with unimplemented read-only command policy.
+9. GREEN: implemented read-only prefix policy helper and `cargo test -p oax-tools` passed.
 
 ## Command Evidence
 
@@ -19,6 +21,7 @@ Plan: `docs/plans/2026-02-17-phase-1-core-safety-slice-1.md`
 cargo test -p oax-runtime
 cargo test -p oax-core
 cargo test -p oax-security
+cargo test -p oax-tools
 cargo test --workspace
 bash scripts/generate-types.sh
 ```

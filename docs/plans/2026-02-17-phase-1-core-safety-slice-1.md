@@ -6,7 +6,7 @@
 **Goal:** Implement foundational Phase 1 runtime and contract primitives needed for safe agent execution loops.  
 **Architecture:** Define reusable core interfaces in `oax-core` and implement runtime primitives in `oax-runtime` for message-tag routing, conversation budgets, and state-machine transitions. Keep the implementation minimal and test-first.  
 **Tech Stack:** Rust (`async-trait`, `serde`, `typeshare`)  
-**Requirement IDs:** SAFE-04, SAFE-06, SAFE-07, COORD-01, COORD-02, COORD-04, COORD-05
+**Requirement IDs:** SAFE-01, SAFE-04, SAFE-06, SAFE-07, COORD-01, COORD-02, COORD-04, COORD-05
 
 ---
 
@@ -35,6 +35,9 @@
 - `injector` for `${SECRET_NAME}` boundary injection with missing-secret detection
 - `leak` detector based on Aho-Corasick pattern scanning
 
+6. Added `oax-tools` crate primitive:
+- read-only command policy helper for shell tool gating
+
 ## Verification
 
 - `cargo test -p oax-runtime`
@@ -42,6 +45,7 @@
 - `cargo test --workspace`
 - `bash scripts/generate-types.sh`
 - `cargo test -p oax-security`
+- `cargo test -p oax-tools`
 
 ## Definition of Done
 
