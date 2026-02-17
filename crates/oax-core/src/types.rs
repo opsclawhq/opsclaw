@@ -19,3 +19,14 @@ pub struct PlanTraceRef {
     pub branch: String,
     pub pr: String,
 }
+
+#[typeshare]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub struct IpcEnvelope {
+    pub schema_version: String,
+    pub message_type: String,
+    pub run_id: Option<String>,
+    pub payload_json: String,
+    pub ok: Option<bool>,
+    pub error: Option<String>,
+}
