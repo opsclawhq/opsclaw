@@ -34,3 +34,15 @@ Skill resolution precedence is now implemented as:
 `bundled < global < workspace`
 
 If the same skill name exists in multiple roots, the workspace-local file wins, then global, then bundled.
+
+## Skill Install Command (Phase 2)
+
+You can install a validated local skill file with:
+
+`opsclaw skill install /path/to/skill.md`
+
+Install-time checks:
+- markdown frontmatter parses successfully
+- trust policy is satisfied
+- destructive skills include rollback template
+- required binaries exist on host

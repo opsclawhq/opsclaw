@@ -437,6 +437,8 @@ dependencies = [
  "oax-llm",
  "oax-runtime",
  "oax-security",
+ "oax-skills",
+ "tempfile",
 ]
 
 [[package]]
