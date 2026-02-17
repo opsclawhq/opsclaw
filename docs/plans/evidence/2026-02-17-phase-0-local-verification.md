@@ -30,3 +30,9 @@ cargo run -p opsclaw -- --version
 ```
 
 All commands passed in local verification.
+
+## Integration Status
+
+- Branch pushed: `codex/phase-0-workspace-foundations`
+- PR creation attempt failed because remote repository has no base branch (`main`) yet.
+- Blocker details: `Base ref must be a branch` and `No commits between main and codex/phase-0-workspace-foundations`.
