@@ -88,3 +88,13 @@ Decision outcomes are explicit:
 - allow read-only calls
 - require approval for mutating calls
 - reject forbidden commands
+
+## MCP Transport (Phase 2)
+
+OpsClaw now exposes an MCP server transport over stdio:
+
+- command: `opsclaw mcp serve-stdio`
+- request methods:
+  - `tools/list`
+  - `tools/call`
+- tool-call decisions are enforced through the same runtime safety policy as non-MCP execution paths.

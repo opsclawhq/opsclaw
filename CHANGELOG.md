@@ -178,3 +178,12 @@ All notable changes to this project will be documented in this file.
 - `opsclaw_mcp_tools` baseline catalog for `shell`, `http`, `file`, `kubectl`, and `git`.
 - `evaluate_mcp_call` policy bridge that applies risk classification and approval planning to MCP-originated commands.
 - MCP tests for tool catalog coverage, read-only allow path, mutating approval path, and forbidden-command rejection.
+
+## [0.1.0-phase2-slice9] - 2026-02-17
+
+### Added
+
+- `opsclaw mcp serve-stdio` CLI command for stdio MCP transport.
+- `opsclaw::mcp_stdio` request/response handler for `tools/list` and `tools/call`.
+- JSON-line stdio server loop (`serve_stdio`) for MCP client interoperability.
+- Stdio MCP tests for list handling, call decision handling, malformed input errors, and forbidden-command responses.
