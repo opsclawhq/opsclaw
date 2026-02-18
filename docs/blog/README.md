@@ -15,3 +15,5 @@ Each phase should include:
 - [2026-02-17: Phase 2 Content System Baseline](2026-02-17-phase-2-content-system.md)
 - [2026-02-18: Phase 3 v0.1 Launch](2026-02-18-phase-3-v0-1-launch.md)
 - [2026-02-18: Phase 3 Slack Design Decisions](2026-02-18-phase-3-slack-design-decisions.md)
+- [2026-02-18: Phase 4 Mission Control Progress](2026-02-18-phase-4-mission-control-progress.md)
+- [2026-02-18: Phase 4 Design Decisions](2026-02-18-phase-4-design-decisions.md)

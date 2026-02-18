@@ -2,6 +2,17 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.1.0-phase4-slice5] - 2026-02-18
+
+### Added
+
+- Mission Control user runbook at `docs/user-guide/mission-control-playbook.md`.
+- Mission Control contributor architecture guide at `docs/developer-guide/mission-control-architecture.md`.
+- Phase 4 engineering narrative posts:
+  - `docs/blog/2026-02-18-phase-4-mission-control-progress.md`
+  - `docs/blog/2026-02-18-phase-4-design-decisions.md`
+- User/developer/blog index updates for Phase 4 guide discoverability.
+
 ## [0.1.0-phase4-slice4] - 2026-02-18
 
 ### Added

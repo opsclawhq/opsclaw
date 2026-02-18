@@ -18,3 +18,7 @@ This track is for operators and team leads who run OpsClaw in real environments.
 ## Phase 3 Guides
 
 - [Slack Operator Handbook](slack-operator-handbook.md)
+
+## Phase 4 Guides
+
+- [Mission Control Playbook](mission-control-playbook.md)
