@@ -48,6 +48,17 @@ pub fn agent_reply(template: &str, text: &str) -> String {
     )
 }
 
+pub fn response_for_input(template: &str, input: &str) -> String {
+    let normalized = input.trim().trim_start_matches('/').to_ascii_lowercase();
+    match normalized.as_str() {
+        "start" => start_message(template),
+        "help" => help_message(),
+        "squad" => squad_message(template),
+        "approve" => approval_message(),
+        _ => agent_reply(template, input),
+    }
+}
+
 fn template_label(template: &str) -> &'static str {
     let normalized = normalized_template(template);
     match normalized.as_str() {
@@ -97,5 +108,13 @@ mod tests {
     fn callback_ack_tracks_decision() {
         assert!(callback_ack_message("approve").contains("Approval recorded"));
         assert!(callback_ack_message("reject").contains("Approval rejected"));
+    }
+
+    #[test]
+    fn response_for_input_routes_known_commands() {
+        let help = response_for_input("sre-squad", "help");
+        let squad = response_for_input("sre-squad", "/squad");
+        assert!(help.contains("OpsClaw commands"));
+        assert!(squad.contains("Active SRE squad"));
     }
 }

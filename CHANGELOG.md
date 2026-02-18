@@ -2,6 +2,29 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.1.0-phase5-slack-live-relay] - 2026-02-18
+
+### Added
+
+- Live Slack relay path:
+  - `opsclaw slack live-event` command
+  - Slack API transport client (`chat.postMessage`) with token auth
+  - live-event decision model for mention/url-verification/ignore outcomes
+- Shared response routing helper in `squad_responder`:
+  - `response_for_input(...)` reused by unified runtime and Slack live relay
+- Plan artifacts:
+  - `docs/plans/2026-02-18-phase-5-slack-live-relay-design.md`
+  - `docs/plans/2026-02-18-phase-5-slack-live-relay-slice.md`
+  - `docs/plans/evidence/2026-02-18-phase-5-slack-live-relay-slice.md`
+
+### Changed
+
+- Contributor and operator Slack docs updated for live relay workflow:
+  - `docs/developer-guide/slack-integration.md`
+  - `docs/user-guide/slack-operator-handbook.md`
+- Architecture docs updated for Slack live transport bridge:
+  - `docs/architecture.md`
+
 ## [0.1.0-phase5-unified-runtime-core] - 2026-02-18
 
 ### Added

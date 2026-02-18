@@ -15,7 +15,10 @@ use channels_router::{route_platform_event, ChannelPlatform, ChannelRouteDecisio
 use discord_adapter::{
     build_embed, is_role_authorized, route_discord_payload, DiscordRouteDecision,
 };
-use slack_adapter::{build_install_url, retry_after_seconds, route_for_bot, SlackInstallConfig};
+use slack_adapter::{
+    build_install_url, handle_live_event, resolve_bot_token as resolve_slack_bot_token,
+    retry_after_seconds, route_for_bot, HttpSlackApi, SlackInstallConfig, SlackLiveDecision,
+};
 use slack_approval::{
     build_approval_card, card_to_block_kit_json, parse_interaction_decision, ApprovalDecision,
 };
@@ -225,6 +228,18 @@ enum SlackCommands {
         max_chars: usize,
         #[arg(long, default_value = "opsclaw-response.txt")]
         snippet_name: String,
+    },
+    LiveEvent {
+        #[arg(long)]
+        bot_user_id: String,
+        #[arg(long)]
+        payload_json: String,
+        #[arg(long)]
+        bot_token: Option<String>,
+        #[arg(long, default_value = "SLACK_BOT_TOKEN")]
+        bot_token_env: String,
+        #[arg(long, value_enum, default_value_t = setup_wizard::Template::SreSquad)]
+        template: setup_wizard::Template,
     },
 }
 
@@ -663,6 +678,52 @@ fn main() {
                     }
                 }
             }
+            SlackCommands::LiveEvent {
+                bot_user_id,
+                payload_json,
+                bot_token,
+                bot_token_env,
+                template,
+            } => {
+                let resolved_token = match resolve_slack_bot_token(
+                    bot_token.as_deref(),
+                    Some(bot_token_env.as_str()),
+                    "SLACK_BOT_TOKEN",
+                ) {
+                    Ok(value) => value,
+                    Err(err) => {
+                        eprintln!("slack live-event failed: {err}");
+                        std::process::exit(1);
+                    }
+                };
+
+                let mut api = match HttpSlackApi::new(resolved_token) {
+                    Ok(value) => value,
+                    Err(err) => {
+                        eprintln!("slack live-event failed: {err}");
+                        std::process::exit(1);
+                    }
+                };
+
+                match handle_live_event(
+                    &mut api,
+                    payload_json.as_str(),
+                    bot_user_id.as_str(),
+                    template_slug(&template),
+                ) {
+                    Ok(decision) => {
+                        println!(
+                            "{}",
+                            serde_json::to_string_pretty(&slack_live_decision_to_json(decision))
+                                .expect("slack live-event output serialization should succeed")
+                        );
+                    }
+                    Err(err) => {
+                        eprintln!("slack live-event failed: {err}");
+                        std::process::exit(1);
+                    }
+                }
+            }
         },
         Some(Commands::Run { command }) => match command {
             RunCommands::RouteEvent {
@@ -858,6 +919,28 @@ fn slack_response_to_json(payload: SlackResponsePayload) -> serde_json::Value {
             "preview": preview,
             "file_name": file_name,
             "content": content
+        }),
+    }
+}
+
+fn slack_live_decision_to_json(decision: SlackLiveDecision) -> serde_json::Value {
+    match decision {
+        SlackLiveDecision::UrlVerification { challenge } => serde_json::json!({
+            "decision": "url_verification",
+            "challenge": challenge
+        }),
+        SlackLiveDecision::Replied {
+            channel,
+            thread_ts,
+            text,
+        } => serde_json::json!({
+            "decision": "replied",
+            "channel": channel,
+            "thread_ts": thread_ts,
+            "text": text
+        }),
+        SlackLiveDecision::Ignore => serde_json::json!({
+            "decision": "ignore"
         }),
     }
 }
