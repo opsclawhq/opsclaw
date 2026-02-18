@@ -1,6 +1,7 @@
 use clap::{Parser, Subcommand};
 mod ipc_socket;
 mod mcp_stdio;
+mod setup_wizard;
 mod slack_collaboration;
 mod slack_approval;
 mod slack_adapter;
@@ -26,6 +27,18 @@ struct Cli {
 
 #[derive(Subcommand)]
 enum Commands {
+    Init {
+        #[arg(long, value_enum, default_value_t = setup_wizard::Template::SreSquad)]
+        template: setup_wizard::Template,
+        #[arg(long)]
+        api_key: Option<String>,
+        #[arg(long)]
+        slack_workspace: Option<String>,
+        #[arg(long, default_value_t = false)]
+        write_plan: bool,
+        #[arg(long, default_value = ".opsclaw/setup-wizard-plan.json")]
+        output: String,
+    },
     Ipc {
         #[command(subcommand)]
         command: IpcCommands,
@@ -124,6 +137,36 @@ fn main() {
     let cli = Cli::parse();
 
     match cli.command {
+        Some(Commands::Init {
+            template,
+            api_key,
+            slack_workspace,
+            write_plan,
+            output,
+        }) => {
+            let has_api_key = api_key
+                .as_deref()
+                .is_some_and(|value| !value.trim().is_empty());
+            let has_slack_workspace = slack_workspace
+                .as_deref()
+                .is_some_and(|value| !value.trim().is_empty());
+
+            let plan = setup_wizard::build_wizard_plan(template, has_api_key, has_slack_workspace);
+
+            if write_plan {
+                if let Err(err) = setup_wizard::write_wizard_plan(Path::new(output.as_str()), &plan)
+                {
+                    eprintln!("setup wizard failed: {err}");
+                    std::process::exit(1);
+                }
+            }
+
+            println!(
+                "{}",
+                serde_json::to_string_pretty(&plan)
+                    .expect("setup wizard output serialization should succeed")
+            );
+        }
         Some(Commands::Ipc {
             command: IpcCommands::ServeSockets { dir },
         }) => {

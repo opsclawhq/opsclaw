@@ -2,6 +2,15 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.1.0-phase5-slice1] - 2026-02-18
+
+### Added
+
+- Setup wizard planning module at `crates/opsclaw/src/setup_wizard.rs`.
+- `opsclaw init` CLI command with template selection, timing gate output, and optional plan-file write.
+- Setup wizard preview guide at `docs/user-guide/setup-wizard-preview.md`.
+- Setup wizard plan/design/evidence docs for Phase 5 slice `05-01`.
+
 ## [0.1.0-phase4-slice5] - 2026-02-18
 
 ### Added
