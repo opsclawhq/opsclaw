@@ -21,6 +21,11 @@ Use this helper at phase close to scaffold comparison + social artifacts:
 
 `scripts/content/update-phase-content.sh <phase-number> [yyyy-mm-dd]`
 
+Use these release hardening helpers before phase gate closure:
+
+- `scripts/docs/validate-release-docs.sh`
+- `scripts/content/generate-engineering-blog.sh --phase <n> --date <yyyy-mm-dd>`
+
 ## Phase 3 Guides
 
 - [Slack Integration Guide](slack-integration.md)
@@ -31,3 +36,4 @@ Use this helper at phase close to scaffold comparison + social artifacts:
 - [Mission Control Kanban and Approval Stream](dashboard-kanban-approvals.md)
 - [Mission Control Economics and Conversation Viewer](dashboard-economics-conversations.md)
 - [Mission Control Architecture](mission-control-architecture.md)
+- [Docs Release Hardening](docs-release-hardening.md)
