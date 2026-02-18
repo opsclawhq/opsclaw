@@ -41,3 +41,8 @@ Phase 0 establishes a Rust workspace, type boundary generation, and a local infr
   - thread reply target selection (`thread_ts` fallback to `ts`)
   - 429 retry policy extraction from `Retry-After`
 - `opsclaw slack ...` CLI commands expose adapter behavior for local contract verification before live Slack transport wiring.
+- `opsclaw::slack_approval` adds deterministic Slack approval-card logic for:
+  - mutating command approval-card generation via `oax_tools::approval`
+  - Slack Block Kit payload rendering with blast radius and rollback guidance
+  - interaction action parsing into approve/reject decisions
+- additional `opsclaw slack ...` commands expose approval-card generation and interaction parsing for local HITL contract verification.
