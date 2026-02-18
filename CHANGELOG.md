@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.1.0-phase5-slice5] - 2026-02-18
+
+### Added
+
+- Build-in-public pipeline script at `scripts/content/phase-delivery-pipeline.sh`.
+- Agent-readable docs map at `docs/agent-index.yaml`.
+- Build-in-public pipeline user guide at `docs/user-guide/build-in-public-pipeline.md`.
+- Blog pipeline metadata location in `docs/blog/manifests/`.
+- Phase 5 content pipeline plan/design/evidence docs for slice `05-05`.
+
 ## [0.1.0-phase5-slice4] - 2026-02-18
 
 ### Added
