@@ -86,3 +86,6 @@ Phase 0 establishes a Rust workspace, type boundary generation, and a local infr
   - message update routing for group/private chats (`route-event`)
   - inline keyboard payload rendering (`build-keyboard`)
   - group-chat support detection (`chat-support`)
+- `opsclaw channels` command now exposes deterministic multi-platform routing contracts:
+  - platform-agnostic route normalization for Slack/Discord/Telegram (`route-event`)
+  - unified route payload fields (`platform`, `route_kind`, `target_ref`, `text`)

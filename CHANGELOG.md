@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.1.0-phase5-slice4] - 2026-02-18
+
+### Added
+
+- Multi-platform router module at `crates/opsclaw/src/channels_router.rs`.
+- `opsclaw channels` CLI command with cross-platform contract check:
+  - `route-event`
+- Multi-platform routing preview guide at `docs/user-guide/multi-platform-routing-preview.md`.
+- Phase 5 multi-platform routing plan/design/evidence docs for slice `05-04`.
+
 ## [0.1.0-phase5-slice3] - 2026-02-18
 
 ### Added
