@@ -93,3 +93,6 @@ Phase 0 establishes a Rust workspace, type boundary generation, and a local infr
   - per-slice LinkedIn/X drafts in `.content/phase-<n>/`
   - per-slice blog recap/design drafts and machine-readable manifests in `docs/blog/`
   - structured docs navigation index in `docs/agent-index.yaml`
+- docs release hardening automation now exists via:
+  - `scripts/docs/validate-release-docs.sh` for required docs/index/link checks
+  - `scripts/content/generate-engineering-blog.sh` for recurring recap/design/process blog draft scaffolding

@@ -23,6 +23,11 @@ This documentation is structured for both human readers and coding agents.
 
 - [Agent Docs Index](agent-index.yaml)
 
+## Release Hardening Commands
+
+- `scripts/docs/validate-release-docs.sh`
+- `scripts/content/generate-engineering-blog.sh --phase <n> --date <yyyy-mm-dd>`
+
 ## OpsClaw vs OpenClaw Series Workflow
 
 The recurring comparison series is managed phase-by-phase in:

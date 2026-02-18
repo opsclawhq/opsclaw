@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.1.0-phase5-slice6] - 2026-02-18
+
+### Added
+
+- Docs release validator at `scripts/docs/validate-release-docs.sh`.
+- Recurring engineering blog draft scaffold at `scripts/content/generate-engineering-blog.sh`.
+- Contributor guide for docs hardening at `docs/developer-guide/docs-release-hardening.md`.
+- Editorial workflow guide at `docs/blog/editorial-workflow.md`.
+- Phase 5 docs-hardening plan/design/evidence docs for slice `05-06`.
+
 ## [0.1.0-phase5-slice5] - 2026-02-18
 
 ### Added
