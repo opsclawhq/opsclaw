@@ -12,6 +12,7 @@ mod slack_collaboration;
 mod squad_responder;
 mod squad_runtime;
 mod telegram_adapter;
+mod webhook_runtime;
 use channels_router::{route_platform_event, ChannelPlatform, ChannelRouteDecision};
 use discord_adapter::{
     build_embed, handle_live_event as handle_discord_live_event, is_role_authorized,
@@ -39,6 +40,7 @@ use telegram_adapter::{
     HttpTelegramApi, TelegramInlineButton, TelegramLiveConfig, TelegramLiveDecision,
     TelegramLiveOutcome, TelegramRouteDecision,
 };
+use webhook_runtime::{platform_from_path, WebhookPlatform};
 
 #[derive(Parser)]
 #[command(name = "opsclaw", version)]
@@ -261,6 +263,30 @@ enum SlackCommands {
 
 #[derive(Subcommand)]
 enum RunCommands {
+    ServeWebhooks {
+        #[arg(long, default_value = "127.0.0.1:8787")]
+        bind: String,
+        #[arg(long)]
+        max_requests: Option<usize>,
+        #[arg(long)]
+        slack_bot_user_id: String,
+        #[arg(long)]
+        telegram_bot_username: String,
+        #[arg(long)]
+        slack_bot_token: Option<String>,
+        #[arg(long, default_value = "SLACK_BOT_TOKEN")]
+        slack_bot_token_env: String,
+        #[arg(long)]
+        discord_bot_token: Option<String>,
+        #[arg(long, default_value = "DISCORD_BOT_TOKEN")]
+        discord_bot_token_env: String,
+        #[arg(long)]
+        telegram_bot_token: Option<String>,
+        #[arg(long, default_value = "TELEGRAM_BOT_TOKEN")]
+        telegram_bot_token_env: String,
+        #[arg(long, value_enum, default_value_t = setup_wizard::Template::SreSquad)]
+        template: setup_wizard::Template,
+    },
     LiveStdio {
         #[arg(long, value_enum, default_value_t = setup_wizard::Template::SreSquad)]
         template: setup_wizard::Template,
@@ -826,6 +852,185 @@ fn main() {
             }
         },
         Some(Commands::Run { command }) => match command {
+            RunCommands::ServeWebhooks {
+                bind,
+                max_requests,
+                slack_bot_user_id,
+                telegram_bot_username,
+                slack_bot_token,
+                slack_bot_token_env,
+                discord_bot_token,
+                discord_bot_token_env,
+                telegram_bot_token,
+                telegram_bot_token_env,
+                template,
+            } => {
+                let template = template_slug(&template).to_string();
+                let server = match tiny_http::Server::http(bind.as_str()) {
+                    Ok(value) => value,
+                    Err(err) => {
+                        eprintln!("run serve-webhooks failed: {err}");
+                        std::process::exit(1);
+                    }
+                };
+
+                eprintln!("run serve-webhooks: listening on {}", bind);
+
+                let mut requests_processed = 0usize;
+                let mut slack_api: Option<HttpSlackApi> = None;
+                let mut discord_api: Option<HttpDiscordApi> = None;
+                let mut telegram_api: Option<HttpTelegramApi> = None;
+
+                loop {
+                    if let Some(limit) = max_requests {
+                        if requests_processed >= limit {
+                            break;
+                        }
+                    }
+
+                    let mut request = match server.recv() {
+                        Ok(value) => value,
+                        Err(err) => {
+                            eprintln!("run serve-webhooks failed: {err}");
+                            std::process::exit(1);
+                        }
+                    };
+
+                    let method = request.method().as_str().to_string();
+                    if method != "POST" {
+                        let response = tiny_http::Response::from_string(
+                            serde_json::json!({
+                                "error": format!("unsupported method `{method}` (expected POST)")
+                            })
+                            .to_string(),
+                        )
+                        .with_status_code(tiny_http::StatusCode(405))
+                        .with_header(
+                            tiny_http::Header::from_bytes(
+                                &b"Content-Type"[..],
+                                &b"application/json"[..],
+                            )
+                            .expect("content-type header should build"),
+                        );
+                        let _ = request.respond(response);
+                        requests_processed += 1;
+                        continue;
+                    }
+
+                    let request_path = request
+                        .url()
+                        .split('?')
+                        .next()
+                        .unwrap_or_default()
+                        .to_string();
+
+                    let mut payload_json = String::new();
+                    if let Err(err) = request.as_reader().read_to_string(&mut payload_json) {
+                        let response = tiny_http::Response::from_string(
+                            serde_json::json!({
+                                "error": format!("failed reading request body: {err}")
+                            })
+                            .to_string(),
+                        )
+                        .with_status_code(tiny_http::StatusCode(400))
+                        .with_header(
+                            tiny_http::Header::from_bytes(
+                                &b"Content-Type"[..],
+                                &b"application/json"[..],
+                            )
+                            .expect("content-type header should build"),
+                        );
+                        let _ = request.respond(response);
+                        requests_processed += 1;
+                        continue;
+                    }
+
+                    let decision = (|| -> Result<serde_json::Value, String> {
+                        match platform_from_path(request_path.as_str())? {
+                            WebhookPlatform::Slack => {
+                                if slack_api.is_none() {
+                                    let token = resolve_slack_bot_token(
+                                        slack_bot_token.as_deref(),
+                                        Some(slack_bot_token_env.as_str()),
+                                        "SLACK_BOT_TOKEN",
+                                    )?;
+                                    slack_api = Some(HttpSlackApi::new(token)?);
+                                }
+
+                                let decision = handle_slack_live_event(
+                                    slack_api.as_mut().expect("slack api initialized"),
+                                    payload_json.as_str(),
+                                    slack_bot_user_id.as_str(),
+                                    template.as_str(),
+                                )?;
+                                Ok(slack_live_decision_to_json(decision))
+                            }
+                            WebhookPlatform::Discord => {
+                                if discord_api.is_none() {
+                                    let token = resolve_discord_bot_token(
+                                        discord_bot_token.as_deref(),
+                                        Some(discord_bot_token_env.as_str()),
+                                        "DISCORD_BOT_TOKEN",
+                                    )?;
+                                    discord_api = Some(HttpDiscordApi::new(token)?);
+                                }
+
+                                let decision = handle_discord_live_event(
+                                    discord_api.as_mut().expect("discord api initialized"),
+                                    payload_json.as_str(),
+                                    template.as_str(),
+                                )?;
+                                Ok(discord_live_decision_to_json(decision))
+                            }
+                            WebhookPlatform::Telegram => {
+                                if telegram_api.is_none() {
+                                    let token = resolve_telegram_bot_token(
+                                        telegram_bot_token.as_deref(),
+                                        Some(telegram_bot_token_env.as_str()),
+                                        "TELEGRAM_BOT_TOKEN",
+                                    )?;
+                                    telegram_api = Some(HttpTelegramApi::new(token)?);
+                                }
+
+                                let decision = handle_telegram_live_event(
+                                    telegram_api.as_mut().expect("telegram api initialized"),
+                                    payload_json.as_str(),
+                                    telegram_bot_username.as_str(),
+                                    template.as_str(),
+                                )?;
+                                Ok(telegram_live_decision_to_json(decision))
+                            }
+                        }
+                    })();
+
+                    let (status, body) = match decision {
+                        Ok(value) => (200, value),
+                        Err(err) => (400, serde_json::json!({ "error": err })),
+                    };
+
+                    let response = tiny_http::Response::from_string(body.to_string())
+                        .with_status_code(tiny_http::StatusCode(status))
+                        .with_header(
+                            tiny_http::Header::from_bytes(
+                                &b"Content-Type"[..],
+                                &b"application/json"[..],
+                            )
+                            .expect("content-type header should build"),
+                        );
+
+                    if let Err(err) = request.respond(response) {
+                        eprintln!("run serve-webhooks failed: {err}");
+                        std::process::exit(1);
+                    }
+
+                    requests_processed += 1;
+                }
+
+                eprintln!(
+                    "run serve-webhooks: requests_processed={}",
+                    requests_processed
+                );
+            }
             RunCommands::LiveStdio {
                 template,
                 max_events,
