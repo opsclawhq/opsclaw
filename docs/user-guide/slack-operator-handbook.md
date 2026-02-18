@@ -95,3 +95,23 @@ Common checks:
 - missing intro fields: ensure `name`, `role`, and `personality` are present
 - no specialist assignment: planner marks escalation when no specialty match is found
 - overflow fallback not triggered: confirm `max-chars` is below content length
+
+## 6. Live Relay Workflow (Phase 5)
+
+Use `opsclaw slack live-event` to process a real Slack Events API payload and post a response back to the same thread.
+
+```bash
+export SLACK_BOT_TOKEN="xoxb-..."
+
+opsclaw slack live-event \
+  --bot-user-id U_BOT \
+  --payload-json '{"type":"event_callback","event":{"type":"app_mention","channel":"C123","text":"<@U_BOT> squad","ts":"173.10","thread_ts":"173.01"}}' \
+  --template sre-squad
+```
+
+Behavior:
+
+- mention events route through shared squad responder logic and post via `chat.postMessage`
+- replies preserve thread context through `thread_ts`
+- non-mention events are ignored
+- URL verification payloads return challenge data without posting

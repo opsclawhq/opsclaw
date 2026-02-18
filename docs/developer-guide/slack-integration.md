@@ -40,13 +40,21 @@ cargo test -p opsclaw slack_collaboration::tests::plans_visible_discussion_with_
 
 ## 3. Extending to Live Slack Runtime
 
-When wiring live `@slack/bolt` runtime integration:
+Current live relay bridge:
+
+- `opsclaw slack live-event` accepts a raw Events API payload and uses:
+  - `route_for_bot` for deterministic mention routing
+  - `squad_responder` for shared response rendering
+  - Slack `chat.postMessage` API via `HttpSlackApi`
+
+When wiring full embedded server/signature verification next:
 
 1. keep pure contracts in existing modules unchanged where possible
 2. add transport and signature verification as separate integration layer
 3. route inbound events to existing contract functions first
 4. preserve explicit HITL gate behavior (`build-approval-card` + decision parsing)
 5. preserve overflow behavior (`prepare-response`) before message post
+6. keep `slack live-event` as an integration-testable relay path
 
 ## 4. Traceability
 

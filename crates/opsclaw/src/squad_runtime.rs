@@ -1,7 +1,5 @@
 use crate::channels_router::{route_platform_event, ChannelPlatform, ChannelRouteDecision};
-use crate::squad_responder::{
-    agent_reply, approval_message, help_message, squad_message, start_message,
-};
+use crate::squad_responder::response_for_input;
 use serde::{Deserialize, Serialize};
 use std::io::{BufRead, Write};
 
@@ -38,7 +36,7 @@ pub fn process_inbound_event(
     match decision {
         ChannelRouteDecision::Ignore => Ok(None),
         ChannelRouteDecision::Routed(route) => {
-            let text = build_response_text(template, route.text.as_str());
+            let text = response_for_input(template, route.text.as_str());
 
             Ok(Some(RuntimeOutboundEvent {
                 platform: route.platform,
@@ -105,17 +103,6 @@ pub fn run_stdio_loop(
         events_processed,
         responses_emitted,
     })
-}
-
-fn build_response_text(template: &str, routed_text: &str) -> String {
-    let normalized = routed_text.trim().trim_start_matches('/').to_ascii_lowercase();
-    match normalized.as_str() {
-        "start" => start_message(template),
-        "help" => help_message(),
-        "squad" => squad_message(template),
-        "approve" => approval_message(),
-        _ => agent_reply(template, routed_text),
-    }
 }
 
 #[cfg(test)]
