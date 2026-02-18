@@ -2,6 +2,7 @@ use clap::{Parser, Subcommand};
 mod channels_router;
 mod discord_adapter;
 mod ipc_socket;
+mod live_runtime;
 mod mcp_stdio;
 mod setup_wizard;
 mod skill_install;
@@ -17,6 +18,7 @@ use discord_adapter::{
     resolve_bot_token as resolve_discord_bot_token, route_discord_payload, DiscordLiveDecision,
     DiscordRouteDecision, HttpDiscordApi,
 };
+use live_runtime::run_live_stdio_loop;
 use slack_adapter::{
     build_install_url, handle_live_event as handle_slack_live_event,
     resolve_bot_token as resolve_slack_bot_token,
@@ -259,6 +261,24 @@ enum SlackCommands {
 
 #[derive(Subcommand)]
 enum RunCommands {
+    LiveStdio {
+        #[arg(long, value_enum, default_value_t = setup_wizard::Template::SreSquad)]
+        template: setup_wizard::Template,
+        #[arg(long)]
+        max_events: Option<usize>,
+        #[arg(long)]
+        slack_bot_token: Option<String>,
+        #[arg(long, default_value = "SLACK_BOT_TOKEN")]
+        slack_bot_token_env: String,
+        #[arg(long)]
+        discord_bot_token: Option<String>,
+        #[arg(long, default_value = "DISCORD_BOT_TOKEN")]
+        discord_bot_token_env: String,
+        #[arg(long)]
+        telegram_bot_token: Option<String>,
+        #[arg(long, default_value = "TELEGRAM_BOT_TOKEN")]
+        telegram_bot_token_env: String,
+    },
     LiveEvent {
         #[arg(long)]
         platform: String,
@@ -806,6 +826,110 @@ fn main() {
             }
         },
         Some(Commands::Run { command }) => match command {
+            RunCommands::LiveStdio {
+                template,
+                max_events,
+                slack_bot_token,
+                slack_bot_token_env,
+                discord_bot_token,
+                discord_bot_token_env,
+                telegram_bot_token,
+                telegram_bot_token_env,
+            } => {
+                let stdin = std::io::stdin();
+                let stdout = std::io::stdout();
+                let mut writer = stdout.lock();
+                let reader = stdin.lock();
+                let template = template_slug(&template).to_string();
+
+                let mut slack_api: Option<HttpSlackApi> = None;
+                let mut discord_api: Option<HttpDiscordApi> = None;
+                let mut telegram_api: Option<HttpTelegramApi> = None;
+
+                let outcome = run_live_stdio_loop(reader, &mut writer, max_events, |event| {
+                    match event.platform.as_str() {
+                        "slack" => {
+                            let bot_user_id = event.identity.as_deref().ok_or_else(|| {
+                                "run live-stdio failed: slack event missing identity (bot_user_id)"
+                                    .to_string()
+                            })?;
+
+                            if slack_api.is_none() {
+                                let token = resolve_slack_bot_token(
+                                    slack_bot_token.as_deref(),
+                                    Some(slack_bot_token_env.as_str()),
+                                    "SLACK_BOT_TOKEN",
+                                )?;
+                                slack_api = Some(HttpSlackApi::new(token)?);
+                            }
+
+                            let decision = handle_slack_live_event(
+                                slack_api.as_mut().expect("slack api initialized"),
+                                event.payload_json.as_str(),
+                                bot_user_id,
+                                template.as_str(),
+                            )?;
+                            Ok(Some(slack_live_decision_to_json(decision)))
+                        }
+                        "discord" => {
+                            if discord_api.is_none() {
+                                let token = resolve_discord_bot_token(
+                                    discord_bot_token.as_deref(),
+                                    Some(discord_bot_token_env.as_str()),
+                                    "DISCORD_BOT_TOKEN",
+                                )?;
+                                discord_api = Some(HttpDiscordApi::new(token)?);
+                            }
+
+                            let decision = handle_discord_live_event(
+                                discord_api.as_mut().expect("discord api initialized"),
+                                event.payload_json.as_str(),
+                                template.as_str(),
+                            )?;
+                            Ok(Some(discord_live_decision_to_json(decision)))
+                        }
+                        "telegram" => {
+                            let bot_username = event.identity.as_deref().ok_or_else(|| {
+                                "run live-stdio failed: telegram event missing identity (bot_username)"
+                                    .to_string()
+                            })?;
+
+                            if telegram_api.is_none() {
+                                let token = resolve_telegram_bot_token(
+                                    telegram_bot_token.as_deref(),
+                                    Some(telegram_bot_token_env.as_str()),
+                                    "TELEGRAM_BOT_TOKEN",
+                                )?;
+                                telegram_api = Some(HttpTelegramApi::new(token)?);
+                            }
+
+                            let decision = handle_telegram_live_event(
+                                telegram_api.as_mut().expect("telegram api initialized"),
+                                event.payload_json.as_str(),
+                                bot_username,
+                                template.as_str(),
+                            )?;
+                            Ok(Some(telegram_live_decision_to_json(decision)))
+                        }
+                        other => Err(format!(
+                            "run live-stdio failed: unsupported platform `{other}` (expected slack|discord|telegram)"
+                        )),
+                    }
+                });
+
+                match outcome {
+                    Ok(outcome) => {
+                        eprintln!(
+                            "run live-stdio: events_processed={} decisions_emitted={}",
+                            outcome.events_processed, outcome.decisions_emitted
+                        );
+                    }
+                    Err(err) => {
+                        eprintln!("run live-stdio failed: {err}");
+                        std::process::exit(1);
+                    }
+                }
+            }
             RunCommands::LiveEvent {
                 platform,
                 payload_json,

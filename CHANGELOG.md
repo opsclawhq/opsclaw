@@ -2,6 +2,27 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.1.0-phase5-live-stdio-runtime] - 2026-02-18
+
+### Added
+
+- Continuous runtime live relay loop:
+  - `opsclaw run live-stdio` command for mixed Slack/Discord/Telegram NDJSON event dispatch
+  - shared `live_runtime::run_live_stdio_loop(...)` parser/dispatch/emission primitive
+- Lazy live API client reuse in runtime loop for:
+  - Slack (`chat.postMessage`)
+  - Discord (`channels/{id}/messages`)
+  - Telegram (`sendMessage`)
+- Planning artifacts:
+  - `docs/plans/2026-02-18-phase-5-live-stdio-runtime-design.md`
+  - `docs/plans/2026-02-18-phase-5-live-stdio-runtime-slice.md`
+
+### Changed
+
+- Runtime docs and architecture updated for continuous live relay operation:
+  - `docs/user-guide/multi-platform-routing-preview.md`
+  - `docs/architecture.md`
+
 ## [0.1.0-phase5-live-event-runtime] - 2026-02-18
 
 ### Added
