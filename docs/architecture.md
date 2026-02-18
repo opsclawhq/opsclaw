@@ -78,3 +78,7 @@ Phase 0 establishes a Rust workspace, type boundary generation, and a local infr
   - deterministic setup-step plan generation
   - estimated-seconds output with `within_60_second_goal` gate flag
   - optional plan writeout to `.opsclaw/setup-wizard-plan.json`
+- `opsclaw discord` command now exposes deterministic Discord adapter contracts:
+  - slash-command payload routing (`route-event`)
+  - embed payload rendering (`build-embed`)
+  - role authorization checks (`authorize`)

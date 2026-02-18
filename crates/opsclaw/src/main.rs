@@ -1,19 +1,23 @@
 use clap::{Parser, Subcommand};
+mod discord_adapter;
 mod ipc_socket;
 mod mcp_stdio;
 mod setup_wizard;
-mod slack_collaboration;
-mod slack_approval;
-mod slack_adapter;
 mod skill_install;
+mod slack_adapter;
+mod slack_approval;
+mod slack_collaboration;
+use discord_adapter::{
+    build_embed, is_role_authorized, route_discord_payload, DiscordRouteDecision,
+};
+use slack_adapter::{build_install_url, retry_after_seconds, route_for_bot, SlackInstallConfig};
+use slack_approval::{
+    build_approval_card, card_to_block_kit_json, parse_interaction_decision, ApprovalDecision,
+};
 use slack_collaboration::{
     build_intro_message, plan_visible_discussion, prepare_response_for_slack, AgentProfile,
     SlackResponsePayload,
 };
-use slack_approval::{
-    build_approval_card, card_to_block_kit_json, parse_interaction_decision, ApprovalDecision,
-};
-use slack_adapter::{build_install_url, retry_after_seconds, route_for_bot, SlackInstallConfig};
 use std::path::Path;
 
 #[derive(Parser)]
@@ -42,6 +46,10 @@ enum Commands {
     Ipc {
         #[command(subcommand)]
         command: IpcCommands,
+    },
+    Discord {
+        #[command(subcommand)]
+        command: DiscordCommands,
     },
     Slack {
         #[command(subcommand)]
@@ -72,6 +80,26 @@ enum IpcCommands {
     ServeSockets {
         #[arg(long, default_value = ".opsclaw/sockets")]
         dir: String,
+    },
+}
+
+#[derive(Subcommand)]
+enum DiscordCommands {
+    RouteEvent {
+        #[arg(long)]
+        payload_json: String,
+    },
+    BuildEmbed {
+        #[arg(long)]
+        title: String,
+        #[arg(long)]
+        description: String,
+    },
+    Authorize {
+        #[arg(long)]
+        required_role: String,
+        #[arg(long)]
+        roles_json: String,
     },
 }
 
@@ -175,6 +203,60 @@ fn main() {
                 std::process::exit(1);
             }
         }
+        Some(Commands::Discord { command }) => match command {
+            DiscordCommands::RouteEvent { payload_json } => {
+                match route_discord_payload(payload_json.as_str()) {
+                    Ok(decision) => {
+                        println!(
+                            "{}",
+                            serde_json::to_string_pretty(&discord_route_to_json(decision))
+                                .expect("discord route output serialization should succeed")
+                        );
+                    }
+                    Err(err) => {
+                        eprintln!("discord route-event failed: {err}");
+                        std::process::exit(1);
+                    }
+                }
+            }
+            DiscordCommands::BuildEmbed { title, description } => {
+                match build_embed(title.as_str(), description.as_str()) {
+                    Ok(embed) => {
+                        println!(
+                            "{}",
+                            serde_json::to_string_pretty(&embed)
+                                .expect("discord embed output serialization should succeed")
+                        );
+                    }
+                    Err(err) => {
+                        eprintln!("discord build-embed failed: {err}");
+                        std::process::exit(1);
+                    }
+                }
+            }
+            DiscordCommands::Authorize {
+                required_role,
+                roles_json,
+            } => {
+                let roles: Vec<String> = match serde_json::from_str(roles_json.as_str()) {
+                    Ok(value) => value,
+                    Err(err) => {
+                        eprintln!("discord authorize failed: invalid roles_json: {err}");
+                        std::process::exit(1);
+                    }
+                };
+
+                let authorized = is_role_authorized(required_role.as_str(), &roles);
+                println!(
+                    "{}",
+                    serde_json::to_string_pretty(&serde_json::json!({
+                        "required_role": required_role,
+                        "authorized": authorized
+                    }))
+                    .expect("discord authorize output serialization should succeed")
+                );
+            }
+        },
         Some(Commands::Slack { command }) => match command {
             SlackCommands::InstallUrl {
                 client_id,
@@ -333,19 +415,21 @@ fn main() {
                 text,
                 max_chars,
                 snippet_name,
-            } => match prepare_response_for_slack(text.as_str(), max_chars, snippet_name.as_str()) {
-                Ok(payload) => {
-                    println!(
-                        "{}",
-                        serde_json::to_string_pretty(&slack_response_to_json(payload))
-                            .expect("prepare-response output serialization should succeed")
-                    );
+            } => {
+                match prepare_response_for_slack(text.as_str(), max_chars, snippet_name.as_str()) {
+                    Ok(payload) => {
+                        println!(
+                            "{}",
+                            serde_json::to_string_pretty(&slack_response_to_json(payload))
+                                .expect("prepare-response output serialization should succeed")
+                        );
+                    }
+                    Err(err) => {
+                        eprintln!("slack prepare-response failed: {err}");
+                        std::process::exit(1);
+                    }
                 }
-                Err(err) => {
-                    eprintln!("slack prepare-response failed: {err}");
-                    std::process::exit(1);
-                }
-            },
+            }
         },
         Some(Commands::Mcp {
             command: McpCommands::ServeStdio,
@@ -395,6 +479,19 @@ fn route_to_json(route: slack_adapter::SlackRouteDecision) -> serde_json::Value 
             "user_id": mention.user_id
         }),
         slack_adapter::SlackRouteDecision::Ignore => serde_json::json!({
+            "decision": "ignore"
+        }),
+    }
+}
+
+fn discord_route_to_json(route: DiscordRouteDecision) -> serde_json::Value {
+    match route {
+        DiscordRouteDecision::SlashCommand(command) => serde_json::json!({
+            "decision": "slash_command",
+            "command_name": command.command_name,
+            "roles": command.roles
+        }),
+        DiscordRouteDecision::Ignore => serde_json::json!({
             "decision": "ignore"
         }),
     }
