@@ -235,3 +235,14 @@ All notable changes to this project will be documented in this file.
 - `opsclaw slack plan-discussion` CLI command for specialist assignment and escalation-aware visible discussion planning.
 - `opsclaw slack prepare-response` CLI command for Slack length-limit overflow behavior (inline vs snippet payload).
 - Collaboration tests covering intro output, specialist assignment, escalation path, and long-response overflow handling.
+
+## [0.1.0-phase3-slice5] - 2026-02-18
+
+### Added
+
+- `docs/user-guide/slack-operator-handbook.md` for operator runbooks across deploy, HITL, discussion, and overflow handling workflows.
+- `docs/developer-guide/slack-integration.md` covering Slack module boundaries, verification commands, and runtime integration extension points.
+- Phase 3 engineering blogs:
+  - `docs/blog/2026-02-18-phase-3-v0-1-launch.md`
+  - `docs/blog/2026-02-18-phase-3-slack-design-decisions.md`
+- README index updates for user-guide, developer-guide, and blog tracks to include Phase 3 artifacts.

@@ -20,3 +20,7 @@ This track is for contributors building OpsClaw internals.
 Use this helper at phase close to scaffold comparison + social artifacts:
 
 `scripts/content/update-phase-content.sh <phase-number> [yyyy-mm-dd]`
+
+## Phase 3 Guides
+
+- [Slack Integration Guide](slack-integration.md)

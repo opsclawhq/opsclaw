@@ -14,3 +14,7 @@ This track is for operators and team leads who run OpsClaw in real environments.
 1. Add one user-facing how-to tied to shipped features.
 2. Add one troubleshooting note for common failure modes.
 3. Link release notes and social announcement drafts.
+
+## Phase 3 Guides
+
+- [Slack Operator Handbook](slack-operator-handbook.md)
