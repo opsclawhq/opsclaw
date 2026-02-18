@@ -9,6 +9,7 @@ This documentation is structured for both human readers and coding agents.
 - [Skills](skills.md)
 - [Architecture](architecture.md)
 - [API Reference](api-reference.md)
+- [Docs Site Navigation](docs-site-index.md)
 
 ## Audience Tracks
 
@@ -22,6 +23,12 @@ This documentation is structured for both human readers and coding agents.
 ## Agent-Readable Index
 
 - [Agent Docs Index](agent-index.yaml)
+
+## Docusaurus Site Commands
+
+- `npm --prefix packages/docs-site install`
+- `npm --prefix packages/docs-site run start`
+- `npm --prefix packages/docs-site run build`
 
 ## Release Hardening Commands
 

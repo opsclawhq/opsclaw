@@ -2,6 +2,8 @@
 
 This track is for contributors building OpsClaw internals.
 
+Docs site route: `/docs/developer-guide`
+
 ## Scope
 
 - Workspace architecture and crate boundaries
