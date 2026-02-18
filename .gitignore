@@ -1,6 +1,8 @@
 .planning/
 .content/
 planning/
+!scripts/planning/
+!scripts/planning/*.sh
 target/
 .worktrees/
 worktrees/
