@@ -33,10 +33,14 @@ The command prints JSON with:
 
 ## Hand-off to Telegram Live Runtime
 
-After selecting a template in `opsclaw init`, run Telegram live transport with the same template:
+After selecting a template in `opsclaw init`, verify Telegram credentials and then run live transport with the same template:
 
 ```bash
 export TELEGRAM_BOT_TOKEN="<your-bot-token>"
+
+cargo run -p opsclaw -- telegram verify \
+  --expected-bot-username "<bot-username>" \
+  --template sre-squad
 
 cargo run -p opsclaw -- telegram live \
   --bot-username "<bot-username>" \
@@ -45,4 +49,4 @@ cargo run -p opsclaw -- telegram live \
 
 ## Current Limitation
 
-`opsclaw init` remains a deterministic planning scaffold (no interactive TUI provisioning yet). Live Telegram chat transport is now available via `opsclaw telegram live`.
+`opsclaw init` remains a deterministic planning scaffold (no interactive TUI provisioning yet). Live Telegram transport is available via `opsclaw telegram live`, and setup validation is available via `opsclaw telegram verify`.

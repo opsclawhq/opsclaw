@@ -84,6 +84,7 @@ Phase 0 establishes a Rust workspace, type boundary generation, and a local infr
   - embed payload rendering (`build-embed`)
   - role authorization checks (`authorize`)
 - `opsclaw telegram` command now exposes live + contract Telegram behavior:
+  - credential + identity verification (`verify`) with optional setup ping
   - live long-poll runtime bridge (`live`) with real bot-token transport via Telegram HTTP API
   - one-shot live update relay (`handle_live_event`) for runtime-level dispatch
   - message update routing for group/private chats (`route-event`)

@@ -37,8 +37,8 @@ use std::path::Path;
 use telegram_adapter::{
     build_inline_keyboard, handle_live_event as handle_telegram_live_event, is_group_chat,
     resolve_bot_token as resolve_telegram_bot_token, route_telegram_update, run_live_session,
-    HttpTelegramApi, TelegramInlineButton, TelegramLiveConfig, TelegramLiveDecision,
-    TelegramLiveOutcome, TelegramRouteDecision,
+    verify_bot_identity, HttpTelegramApi, TelegramApi, TelegramInlineButton, TelegramLiveConfig,
+    TelegramLiveDecision, TelegramLiveOutcome, TelegramOutgoingMessage, TelegramRouteDecision,
 };
 use webhook_runtime::{platform_from_path, validate_shared_secret, WebhookPlatform};
 
@@ -188,6 +188,18 @@ enum TelegramCommands {
     ChatSupport {
         #[arg(long)]
         chat_type: String,
+    },
+    Verify {
+        #[arg(long)]
+        expected_bot_username: Option<String>,
+        #[arg(long)]
+        bot_token: Option<String>,
+        #[arg(long, default_value = "TELEGRAM_BOT_TOKEN")]
+        bot_token_env: String,
+        #[arg(long)]
+        ping_chat_id: Option<i64>,
+        #[arg(long, value_enum, default_value_t = setup_wizard::Template::SreSquad)]
+        template: setup_wizard::Template,
     },
 }
 
@@ -632,6 +644,77 @@ fn main() {
                         "group_supported": group_supported
                     }))
                     .expect("telegram chat-support output serialization should succeed")
+                );
+            }
+            TelegramCommands::Verify {
+                expected_bot_username,
+                bot_token,
+                bot_token_env,
+                ping_chat_id,
+                template,
+            } => {
+                let resolved_token = match resolve_telegram_bot_token(
+                    bot_token.as_deref(),
+                    Some(bot_token_env.as_str()),
+                    "TELEGRAM_BOT_TOKEN",
+                ) {
+                    Ok(value) => value,
+                    Err(err) => {
+                        eprintln!("telegram verify failed: {err}");
+                        std::process::exit(1);
+                    }
+                };
+
+                let mut api = match HttpTelegramApi::new(resolved_token) {
+                    Ok(value) => value,
+                    Err(err) => {
+                        eprintln!("telegram verify failed: {err}");
+                        std::process::exit(1);
+                    }
+                };
+
+                let identity = match verify_bot_identity(
+                    &mut api,
+                    expected_bot_username.as_deref(),
+                ) {
+                    Ok(value) => value,
+                    Err(err) => {
+                        eprintln!("telegram verify failed: {err}");
+                        std::process::exit(1);
+                    }
+                };
+
+                let mut ping_sent = false;
+                if let Some(chat_id) = ping_chat_id {
+                    let ping_message = TelegramOutgoingMessage {
+                        chat_id,
+                        text: format!(
+                            "OpsClaw setup check passed for template `{}`. Telegram live transport is ready.",
+                            template_slug(&template)
+                        ),
+                        reply_markup: None,
+                    };
+
+                    if let Err(err) = api.send_message(ping_message) {
+                        eprintln!("telegram verify failed: {err}");
+                        std::process::exit(1);
+                    }
+
+                    ping_sent = true;
+                }
+
+                println!(
+                    "{}",
+                    serde_json::to_string_pretty(&serde_json::json!({
+                        "decision": "verified",
+                        "bot_id": identity.id,
+                        "bot_username": identity.username,
+                        "is_bot": identity.is_bot,
+                        "username_checked": expected_bot_username.is_some(),
+                        "ping_chat_id": ping_chat_id,
+                        "ping_sent": ping_sent
+                    }))
+                    .expect("telegram verify output serialization should succeed")
                 );
             }
         },
