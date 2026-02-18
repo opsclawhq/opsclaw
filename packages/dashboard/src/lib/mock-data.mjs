@@ -51,3 +51,30 @@ export const mockActivities = [
     occurred_at: "2026-02-18T01:49:00Z"
   }
 ];
+
+export const mockKanbanTasks = [
+  {
+    task_id: "task-1",
+    title: "Investigate API latency regression",
+    stage: "Inbox",
+    assignee_agent_id: null
+  },
+  {
+    task_id: "task-2",
+    title: "Validate rollback plan for payments deploy",
+    stage: "Assigned",
+    assignee_agent_id: "ferris"
+  },
+  {
+    task_id: "task-3",
+    title: "Review idle cluster rightsizing proposal",
+    stage: "In Progress",
+    assignee_agent_id: "wren"
+  },
+  {
+    task_id: "task-4",
+    title: "Publish incident timeline summary",
+    stage: "Review",
+    assignee_agent_id: "remy"
+  }
+];

@@ -28,3 +28,4 @@ Use this helper at phase close to scaffold comparison + social artifacts:
 ## Phase 4 Guides
 
 - [Mission Control Frontend Foundation](dashboard-frontend-foundation.md)
+- [Mission Control Kanban and Approval Stream](dashboard-kanban-approvals.md)
