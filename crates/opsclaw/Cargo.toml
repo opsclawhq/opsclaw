@@ -17,6 +17,7 @@ oax-security = { path = "../oax-security" }
 oax-skills = { path = "../oax-skills" }
 serde = { version = "1.0.228", features = ["derive"] }
 serde_json = "1.0.149"
+url = "2.5.8"
 
 [dev-dependencies]
 tempfile = "3.25.0"
