@@ -22,3 +22,7 @@ This track is for operators and team leads who run OpsClaw in real environments.
 ## Phase 4 Guides
 
 - [Mission Control Playbook](mission-control-playbook.md)
+
+## Phase 5 Guides
+
+- [Setup Wizard Preview](setup-wizard-preview.md)

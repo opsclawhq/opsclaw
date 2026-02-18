@@ -70,3 +70,11 @@ Phase 0 establishes a Rust workspace, type boundary generation, and a local infr
   - per-agent token/spend/incident/minutes-saved accounting rows
   - ROI summary math (spend vs estimated value saved)
   - conversation transcript viewer with tool-call command/output entries
+
+## Phase 5 Foundations (Kickoff)
+
+- `opsclaw init` command now exposes setup-wizard planning contracts:
+  - template selection (`sre-squad`, `dev-ops-team`, `incident-response`)
+  - deterministic setup-step plan generation
+  - estimated-seconds output with `within_60_second_goal` gate flag
+  - optional plan writeout to `.opsclaw/setup-wizard-plan.json`
