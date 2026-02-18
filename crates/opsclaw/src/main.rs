@@ -40,7 +40,7 @@ use telegram_adapter::{
     HttpTelegramApi, TelegramInlineButton, TelegramLiveConfig, TelegramLiveDecision,
     TelegramLiveOutcome, TelegramRouteDecision,
 };
-use webhook_runtime::{platform_from_path, WebhookPlatform};
+use webhook_runtime::{platform_from_path, validate_shared_secret, WebhookPlatform};
 
 #[derive(Parser)]
 #[command(name = "opsclaw", version)]
@@ -268,6 +268,10 @@ enum RunCommands {
         bind: String,
         #[arg(long)]
         max_requests: Option<usize>,
+        #[arg(long)]
+        webhook_shared_secret: Option<String>,
+        #[arg(long, default_value = "X-OpsClaw-Webhook-Secret")]
+        webhook_secret_header: String,
         #[arg(long)]
         slack_bot_user_id: String,
         #[arg(long)]
@@ -855,6 +859,8 @@ fn main() {
             RunCommands::ServeWebhooks {
                 bind,
                 max_requests,
+                webhook_shared_secret,
+                webhook_secret_header,
                 slack_bot_user_id,
                 telegram_bot_username,
                 slack_bot_token,
@@ -912,6 +918,38 @@ fn main() {
                             )
                             .expect("content-type header should build"),
                         );
+                        let _ = request.respond(response);
+                        requests_processed += 1;
+                        continue;
+                    }
+
+                    let provided_shared_secret = request.headers().iter().find_map(|header| {
+                        if header
+                            .field
+                            .as_str()
+                            .to_string()
+                            .eq_ignore_ascii_case(webhook_secret_header.as_str())
+                        {
+                            Some(header.value.as_str().to_string())
+                        } else {
+                            None
+                        }
+                    });
+
+                    if let Err(err) = validate_shared_secret(
+                        provided_shared_secret.as_deref(),
+                        webhook_shared_secret.as_deref(),
+                    ) {
+                        let response =
+                            tiny_http::Response::from_string(serde_json::json!({ "error": err }).to_string())
+                                .with_status_code(tiny_http::StatusCode(401))
+                                .with_header(
+                                    tiny_http::Header::from_bytes(
+                                        &b"Content-Type"[..],
+                                        &b"application/json"[..],
+                                    )
+                                    .expect("content-type header should build"),
+                                );
                         let _ = request.respond(response);
                         requests_processed += 1;
                         continue;
