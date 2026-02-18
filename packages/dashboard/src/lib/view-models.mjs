@@ -5,6 +5,8 @@ function compareByRoleThenName(a, b) {
   return a.role.localeCompare(b.role);
 }
 
+const STAGE_ORDER = ["Inbox", "Assigned", "In Progress", "Review", "Done"];
+
 export function buildOrgHierarchy(agents) {
   const sorted = [...agents].sort(compareByRoleThenName);
   const byRole = new Map();
@@ -51,4 +53,11 @@ export function buildActivityFeed(activities, limit = 50) {
   return [...activities]
     .sort((a, b) => new Date(b.occurred_at) - new Date(a.occurred_at))
     .slice(0, limit);
+}
+
+export function buildKanbanColumns(tasks) {
+  return STAGE_ORDER.map((stage) => ({
+    stage,
+    tasks: tasks.filter((task) => task.stage === stage)
+  }));
 }

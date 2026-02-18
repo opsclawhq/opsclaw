@@ -28,6 +28,10 @@ body {
   padding: 14px;
 }
 
+.panel-wide {
+  grid-column: span 3;
+}
+
 .subtle {
   color: var(--muted);
   font-size: 0.9rem;
@@ -67,8 +71,67 @@ body {
   padding: 8px 0;
 }
 
+.kanban-grid {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.kanban-column {
+  background: #f7fafe;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 8px;
+}
+
+.kanban-card {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: #fff;
+  margin-bottom: 8px;
+  padding: 8px;
+}
+
+.approval-card {
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: #fff;
+  margin-bottom: 10px;
+  padding: 10px;
+}
+
+.approval-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.decision-button {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 6px 10px;
+  background: #fff;
+}
+
+.decision-button.approve {
+  border-color: #2b9348;
+  color: #2b9348;
+}
+
+.decision-button.reject {
+  border-color: #c1121f;
+  color: #c1121f;
+}
+
 @media (max-width: 980px) {
   .layout {
+    grid-template-columns: 1fr;
+  }
+
+  .panel-wide {
+    grid-column: span 1;
+  }
+
+  .kanban-grid {
     grid-template-columns: 1fr;
   }
 }

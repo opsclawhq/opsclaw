@@ -62,3 +62,7 @@ Phase 0 establishes a Rust workspace, type boundary generation, and a local infr
   - agent profile panel
   - activity feed panel
   - deterministic view-model helpers and runnable Node tests (`node:test`)
+- Dashboard state reducer and event stream simulation now cover:
+  - kanban stage transitions across `Inbox -> Assigned -> In Progress -> Review -> Done`
+  - approval queue lifecycle (`requested`, `approved`, `rejected`)
+  - activity-feed append behavior from dashboard stream events

@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.1.0-phase4-slice3] - 2026-02-18
+
+### Added
+
+- Dashboard event reducer layer at `packages/dashboard/src/lib/dashboard-state.mjs` for kanban and approval stream updates.
+- Stream fixture file at `packages/dashboard/src/lib/mock-stream-events.mjs`.
+- `KanbanBoardPanel` and `ApprovalQueuePanel` dashboard components.
+- Reducer tests at `packages/dashboard/tests/kanban-approvals.test.mjs` covering transition and approval lifecycle behavior.
+- Contributor guide for kanban/approval dashboard architecture at `docs/developer-guide/dashboard-kanban-approvals.md`.
+
 ## [0.1.0-phase0] - 2026-02-17
 
 ### Added
