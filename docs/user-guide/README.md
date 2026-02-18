@@ -29,3 +29,4 @@ This track is for operators and team leads who run OpsClaw in real environments.
 - [Discord Adapter Preview](discord-adapter-preview.md)
 - [Telegram Adapter Preview](telegram-adapter-preview.md)
 - [Multi-Platform Routing Preview](multi-platform-routing-preview.md)
+- [Build-in-Public Pipeline](build-in-public-pipeline.md)

@@ -10,6 +10,14 @@ Each phase should include:
 2. One design decision post (tradeoffs + rejected alternatives)
 3. One reliability/safety/process post when applicable
 
+## Pipeline
+
+Generate draft social/blog artifacts with:
+
+`scripts/content/phase-delivery-pipeline.sh --phase <n> --slice <id> --date <yyyy-mm-dd> --requirements <csv> --pr-url <url> --summary <text>`
+
+Machine-readable manifests are written to `docs/blog/manifests/`.
+
 ## Current Posts
 
 - [2026-02-17: Phase 2 Content System Baseline](2026-02-17-phase-2-content-system.md)

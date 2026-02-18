@@ -1,0 +1,34 @@
+version: 1
+last_updated: 2026-02-18
+sections:
+  core:
+    - id: getting_started
+      path: docs/getting-started.md
+      audience: [user, contributor, agent]
+    - id: concepts
+      path: docs/concepts.md
+      audience: [user, contributor, agent]
+    - id: skills
+      path: docs/skills.md
+      audience: [contributor, agent]
+    - id: architecture
+      path: docs/architecture.md
+      audience: [contributor, agent]
+    - id: api_reference
+      path: docs/api-reference.md
+      audience: [contributor, agent]
+  user_guide:
+    index: docs/user-guide/README.md
+    docs:
+      - docs/user-guide/slack-operator-handbook.md
+      - docs/user-guide/mission-control-playbook.md
+      - docs/user-guide/setup-wizard-preview.md
+      - docs/user-guide/discord-adapter-preview.md
+      - docs/user-guide/telegram-adapter-preview.md
+      - docs/user-guide/multi-platform-routing-preview.md
+      - docs/user-guide/build-in-public-pipeline.md
+  developer_guide:
+    index: docs/developer-guide/README.md
+  blog:
+    index: docs/blog/README.md
+    manifests_dir: docs/blog/manifests

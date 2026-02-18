@@ -19,6 +19,10 @@ This documentation is structured for both human readers and coding agents.
 
 - [Engineering Blog Index](blog/README.md)
 
+## Agent-Readable Index
+
+- [Agent Docs Index](agent-index.yaml)
+
 ## OpsClaw vs OpenClaw Series Workflow
 
 The recurring comparison series is managed phase-by-phase in:
