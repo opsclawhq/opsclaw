@@ -1,12 +1,681 @@
-use clap::Parser;
+use clap::{Parser, Subcommand};
+mod channels_router;
+mod discord_adapter;
+mod ipc_socket;
+mod mcp_stdio;
+mod setup_wizard;
+mod skill_install;
+mod slack_adapter;
+mod slack_approval;
+mod slack_collaboration;
+mod telegram_adapter;
+use channels_router::{route_platform_event, ChannelPlatform, ChannelRouteDecision};
+use discord_adapter::{
+    build_embed, is_role_authorized, route_discord_payload, DiscordRouteDecision,
+};
+use slack_adapter::{build_install_url, retry_after_seconds, route_for_bot, SlackInstallConfig};
+use slack_approval::{
+    build_approval_card, card_to_block_kit_json, parse_interaction_decision, ApprovalDecision,
+};
+use slack_collaboration::{
+    build_intro_message, plan_visible_discussion, prepare_response_for_slack, AgentProfile,
+    SlackResponsePayload,
+};
+use std::path::Path;
+use telegram_adapter::{
+    build_inline_keyboard, is_group_chat, route_telegram_update, TelegramInlineButton,
+    TelegramRouteDecision,
+};
 
 #[derive(Parser)]
 #[command(name = "opsclaw", version)]
 struct Cli {
     #[arg(long)]
     verbose: bool,
+    #[command(subcommand)]
+    command: Option<Commands>,
+}
+
+#[derive(Subcommand)]
+enum Commands {
+    Init {
+        #[arg(long, value_enum, default_value_t = setup_wizard::Template::SreSquad)]
+        template: setup_wizard::Template,
+        #[arg(long)]
+        api_key: Option<String>,
+        #[arg(long)]
+        slack_workspace: Option<String>,
+        #[arg(long, default_value_t = false)]
+        write_plan: bool,
+        #[arg(long, default_value = ".opsclaw/setup-wizard-plan.json")]
+        output: String,
+    },
+    Ipc {
+        #[command(subcommand)]
+        command: IpcCommands,
+    },
+    Channels {
+        #[command(subcommand)]
+        command: ChannelsCommands,
+    },
+    Discord {
+        #[command(subcommand)]
+        command: DiscordCommands,
+    },
+    Telegram {
+        #[command(subcommand)]
+        command: TelegramCommands,
+    },
+    Slack {
+        #[command(subcommand)]
+        command: SlackCommands,
+    },
+    Mcp {
+        #[command(subcommand)]
+        command: McpCommands,
+    },
+    Skill {
+        #[command(subcommand)]
+        command: SkillCommands,
+    },
+}
+
+#[derive(Subcommand)]
+enum SkillCommands {
+    Install { path: String },
+}
+
+#[derive(Subcommand)]
+enum McpCommands {
+    ServeStdio,
+}
+
+#[derive(Subcommand)]
+enum IpcCommands {
+    ServeSockets {
+        #[arg(long, default_value = ".opsclaw/sockets")]
+        dir: String,
+    },
+}
+
+#[derive(Subcommand)]
+enum ChannelsCommands {
+    RouteEvent {
+        #[arg(long)]
+        platform: String,
+        #[arg(long)]
+        payload_json: String,
+        #[arg(long)]
+        identity: Option<String>,
+    },
+}
+
+#[derive(Subcommand)]
+enum DiscordCommands {
+    RouteEvent {
+        #[arg(long)]
+        payload_json: String,
+    },
+    BuildEmbed {
+        #[arg(long)]
+        title: String,
+        #[arg(long)]
+        description: String,
+    },
+    Authorize {
+        #[arg(long)]
+        required_role: String,
+        #[arg(long)]
+        roles_json: String,
+    },
+}
+
+#[derive(Subcommand)]
+enum TelegramCommands {
+    RouteEvent {
+        #[arg(long)]
+        payload_json: String,
+        #[arg(long)]
+        bot_username: String,
+    },
+    BuildKeyboard {
+        #[arg(long)]
+        buttons_json: String,
+    },
+    ChatSupport {
+        #[arg(long)]
+        chat_type: String,
+    },
+}
+
+#[derive(Subcommand)]
+enum SlackCommands {
+    InstallUrl {
+        #[arg(long)]
+        client_id: String,
+        #[arg(long = "scope", value_delimiter = ',')]
+        scopes: Vec<String>,
+        #[arg(long = "user-scope", value_delimiter = ',')]
+        user_scopes: Vec<String>,
+        #[arg(long)]
+        redirect_uri: Option<String>,
+        #[arg(long)]
+        state: String,
+    },
+    RouteEvent {
+        #[arg(long)]
+        bot_user_id: String,
+        #[arg(long)]
+        payload_json: String,
+    },
+    RetryAfter {
+        #[arg(long)]
+        status_code: u16,
+        #[arg(long)]
+        retry_after: Option<String>,
+    },
+    BuildApprovalCard {
+        #[arg(long)]
+        run_id: String,
+        #[arg(long)]
+        command: String,
+        #[arg(long)]
+        rollback_template: Option<String>,
+    },
+    ParseInteraction {
+        #[arg(long)]
+        payload_json: String,
+    },
+    IntroMessage {
+        #[arg(long)]
+        agent_json: String,
+    },
+    PlanDiscussion {
+        #[arg(long)]
+        task: String,
+        #[arg(long)]
+        agents_json: String,
+    },
+    PrepareResponse {
+        #[arg(long)]
+        text: String,
+        #[arg(long, default_value_t = 3500)]
+        max_chars: usize,
+        #[arg(long, default_value = "opsclaw-response.txt")]
+        snippet_name: String,
+    },
 }
 
 fn main() {
-    let _cli = Cli::parse();
+    let cli = Cli::parse();
+
+    match cli.command {
+        Some(Commands::Init {
+            template,
+            api_key,
+            slack_workspace,
+            write_plan,
+            output,
+        }) => {
+            let has_api_key = api_key
+                .as_deref()
+                .is_some_and(|value| !value.trim().is_empty());
+            let has_slack_workspace = slack_workspace
+                .as_deref()
+                .is_some_and(|value| !value.trim().is_empty());
+
+            let plan = setup_wizard::build_wizard_plan(template, has_api_key, has_slack_workspace);
+
+            if write_plan {
+                if let Err(err) = setup_wizard::write_wizard_plan(Path::new(output.as_str()), &plan)
+                {
+                    eprintln!("setup wizard failed: {err}");
+                    std::process::exit(1);
+                }
+            }
+
+            println!(
+                "{}",
+                serde_json::to_string_pretty(&plan)
+                    .expect("setup wizard output serialization should succeed")
+            );
+        }
+        Some(Commands::Ipc {
+            command: IpcCommands::ServeSockets { dir },
+        }) => {
+            if let Err(err) = ipc_socket::serve_ipc_sockets(Path::new(dir.as_str())) {
+                eprintln!("ipc socket server failed: {err}");
+                std::process::exit(1);
+            }
+        }
+        Some(Commands::Channels { command }) => match command {
+            ChannelsCommands::RouteEvent {
+                platform,
+                payload_json,
+                identity,
+            } => {
+                let parsed_platform = match ChannelPlatform::parse(platform.as_str()) {
+                    Ok(value) => value,
+                    Err(err) => {
+                        eprintln!("channels route-event failed: {err}");
+                        std::process::exit(1);
+                    }
+                };
+
+                match route_platform_event(
+                    parsed_platform,
+                    payload_json.as_str(),
+                    identity.as_deref(),
+                ) {
+                    Ok(decision) => {
+                        println!(
+                            "{}",
+                            serde_json::to_string_pretty(&channels_route_to_json(decision))
+                                .expect("channels route output serialization should succeed")
+                        );
+                    }
+                    Err(err) => {
+                        eprintln!("channels route-event failed: {err}");
+                        std::process::exit(1);
+                    }
+                }
+            }
+        },
+        Some(Commands::Discord { command }) => match command {
+            DiscordCommands::RouteEvent { payload_json } => {
+                match route_discord_payload(payload_json.as_str()) {
+                    Ok(decision) => {
+                        println!(
+                            "{}",
+                            serde_json::to_string_pretty(&discord_route_to_json(decision))
+                                .expect("discord route output serialization should succeed")
+                        );
+                    }
+                    Err(err) => {
+                        eprintln!("discord route-event failed: {err}");
+                        std::process::exit(1);
+                    }
+                }
+            }
+            DiscordCommands::BuildEmbed { title, description } => {
+                match build_embed(title.as_str(), description.as_str()) {
+                    Ok(embed) => {
+                        println!(
+                            "{}",
+                            serde_json::to_string_pretty(&embed)
+                                .expect("discord embed output serialization should succeed")
+                        );
+                    }
+                    Err(err) => {
+                        eprintln!("discord build-embed failed: {err}");
+                        std::process::exit(1);
+                    }
+                }
+            }
+            DiscordCommands::Authorize {
+                required_role,
+                roles_json,
+            } => {
+                let roles: Vec<String> = match serde_json::from_str(roles_json.as_str()) {
+                    Ok(value) => value,
+                    Err(err) => {
+                        eprintln!("discord authorize failed: invalid roles_json: {err}");
+                        std::process::exit(1);
+                    }
+                };
+
+                let authorized = is_role_authorized(required_role.as_str(), &roles);
+                println!(
+                    "{}",
+                    serde_json::to_string_pretty(&serde_json::json!({
+                        "required_role": required_role,
+                        "authorized": authorized
+                    }))
+                    .expect("discord authorize output serialization should succeed")
+                );
+            }
+        },
+        Some(Commands::Telegram { command }) => match command {
+            TelegramCommands::RouteEvent {
+                payload_json,
+                bot_username,
+            } => match route_telegram_update(payload_json.as_str(), bot_username.as_str()) {
+                Ok(decision) => {
+                    println!(
+                        "{}",
+                        serde_json::to_string_pretty(&telegram_route_to_json(decision))
+                            .expect("telegram route output serialization should succeed")
+                    );
+                }
+                Err(err) => {
+                    eprintln!("telegram route-event failed: {err}");
+                    std::process::exit(1);
+                }
+            },
+            TelegramCommands::BuildKeyboard { buttons_json } => {
+                let buttons: Vec<Vec<TelegramInlineButton>> =
+                    match serde_json::from_str(buttons_json.as_str()) {
+                        Ok(value) => value,
+                        Err(err) => {
+                            eprintln!(
+                                "telegram build-keyboard failed: invalid buttons_json: {err}"
+                            );
+                            std::process::exit(1);
+                        }
+                    };
+
+                match build_inline_keyboard(buttons) {
+                    Ok(keyboard) => {
+                        println!(
+                            "{}",
+                            serde_json::to_string_pretty(&keyboard)
+                                .expect("telegram keyboard output serialization should succeed")
+                        );
+                    }
+                    Err(err) => {
+                        eprintln!("telegram build-keyboard failed: {err}");
+                        std::process::exit(1);
+                    }
+                }
+            }
+            TelegramCommands::ChatSupport { chat_type } => {
+                let group_supported = is_group_chat(chat_type.as_str());
+                println!(
+                    "{}",
+                    serde_json::to_string_pretty(&serde_json::json!({
+                        "chat_type": chat_type,
+                        "group_supported": group_supported
+                    }))
+                    .expect("telegram chat-support output serialization should succeed")
+                );
+            }
+        },
+        Some(Commands::Slack { command }) => match command {
+            SlackCommands::InstallUrl {
+                client_id,
+                scopes,
+                user_scopes,
+                redirect_uri,
+                state,
+            } => {
+                let config = SlackInstallConfig {
+                    client_id,
+                    scopes,
+                    user_scopes,
+                    redirect_uri,
+                    state,
+                };
+                match build_install_url(&config) {
+                    Ok(url) => println!("{url}"),
+                    Err(err) => {
+                        eprintln!("slack install url generation failed: {err}");
+                        std::process::exit(1);
+                    }
+                }
+            }
+            SlackCommands::RouteEvent {
+                bot_user_id,
+                payload_json,
+            } => match route_for_bot(payload_json.as_str(), bot_user_id.as_str()) {
+                Ok(route) => {
+                    println!(
+                        "{}",
+                        serde_json::to_string_pretty(&route_to_json(route))
+                            .expect("route json serialization should succeed")
+                    );
+                }
+                Err(err) => {
+                    eprintln!("slack route-event failed: {err}");
+                    std::process::exit(1);
+                }
+            },
+            SlackCommands::RetryAfter {
+                status_code,
+                retry_after,
+            } => {
+                let seconds = retry_after_seconds(status_code, retry_after.as_deref());
+                println!(
+                    "{}",
+                    serde_json::to_string_pretty(&serde_json::json!({
+                        "status_code": status_code,
+                        "retry_after_seconds": seconds
+                    }))
+                    .expect("retry output serialization should succeed")
+                );
+            }
+            SlackCommands::BuildApprovalCard {
+                run_id,
+                command,
+                rollback_template,
+            } => match build_approval_card(
+                run_id.as_str(),
+                command.as_str(),
+                rollback_template.as_deref(),
+            ) {
+                Ok(card) => {
+                    let block_kit = card_to_block_kit_json(&card);
+                    println!(
+                        "{}",
+                        serde_json::to_string_pretty(&serde_json::json!({
+                            "run_id": card.run_id,
+                            "command": card.command,
+                            "expected_effect": card.expected_effect,
+                            "blast_radius": card.blast_radius,
+                            "rollback_steps": card.rollback_steps,
+                            "approve_action_id": card.approve_action_id,
+                            "reject_action_id": card.reject_action_id,
+                            "slack_payload": block_kit
+                        }))
+                        .expect("approval-card output serialization should succeed")
+                    );
+                }
+                Err(err) => {
+                    eprintln!("slack build-approval-card failed: {err}");
+                    std::process::exit(1);
+                }
+            },
+            SlackCommands::ParseInteraction { payload_json } => {
+                match parse_interaction_decision(payload_json.as_str()) {
+                    Ok(parsed) => {
+                        println!(
+                            "{}",
+                            serde_json::to_string_pretty(&serde_json::json!({
+                                "run_id": parsed.run_id,
+                                "decision": approval_decision_label(parsed.decision)
+                            }))
+                            .expect("interaction output serialization should succeed")
+                        );
+                    }
+                    Err(err) => {
+                        eprintln!("slack parse-interaction failed: {err}");
+                        std::process::exit(1);
+                    }
+                }
+            }
+            SlackCommands::IntroMessage { agent_json } => {
+                let profile: AgentProfile = match serde_json::from_str(agent_json.as_str()) {
+                    Ok(value) => value,
+                    Err(err) => {
+                        eprintln!("slack intro-message failed: invalid agent_json: {err}");
+                        std::process::exit(1);
+                    }
+                };
+
+                match build_intro_message(&profile) {
+                    Ok(message) => {
+                        println!(
+                            "{}",
+                            serde_json::to_string_pretty(&serde_json::json!({
+                                "message": message
+                            }))
+                            .expect("intro-message output serialization should succeed")
+                        );
+                    }
+                    Err(err) => {
+                        eprintln!("slack intro-message failed: {err}");
+                        std::process::exit(1);
+                    }
+                }
+            }
+            SlackCommands::PlanDiscussion { task, agents_json } => {
+                let agents: Vec<AgentProfile> = match serde_json::from_str(agents_json.as_str()) {
+                    Ok(value) => value,
+                    Err(err) => {
+                        eprintln!("slack plan-discussion failed: invalid agents_json: {err}");
+                        std::process::exit(1);
+                    }
+                };
+
+                match plan_visible_discussion(task.as_str(), &agents) {
+                    Ok(plan) => {
+                        println!(
+                            "{}",
+                            serde_json::to_string_pretty(&serde_json::json!({
+                                "assignee": plan.assignee,
+                                "escalation_required": plan.escalation_required,
+                                "turns": plan.turns
+                            }))
+                            .expect("plan-discussion output serialization should succeed")
+                        );
+                    }
+                    Err(err) => {
+                        eprintln!("slack plan-discussion failed: {err}");
+                        std::process::exit(1);
+                    }
+                }
+            }
+            SlackCommands::PrepareResponse {
+                text,
+                max_chars,
+                snippet_name,
+            } => {
+                match prepare_response_for_slack(text.as_str(), max_chars, snippet_name.as_str()) {
+                    Ok(payload) => {
+                        println!(
+                            "{}",
+                            serde_json::to_string_pretty(&slack_response_to_json(payload))
+                                .expect("prepare-response output serialization should succeed")
+                        );
+                    }
+                    Err(err) => {
+                        eprintln!("slack prepare-response failed: {err}");
+                        std::process::exit(1);
+                    }
+                }
+            }
+        },
+        Some(Commands::Mcp {
+            command: McpCommands::ServeStdio,
+        }) => {
+            if let Err(err) = mcp_stdio::serve_stdio() {
+                eprintln!("mcp stdio server failed: {err}");
+                std::process::exit(1);
+            }
+        }
+        Some(Commands::Skill {
+            command: SkillCommands::Install { path },
+        }) => match skill_install::install_skill_to_default_location(path.as_ref()) {
+            Ok(installed_path) => {
+                println!("installed skill at {}", installed_path.display());
+            }
+            Err(err) => {
+                eprintln!("skill install failed: {err}");
+                std::process::exit(1);
+            }
+        },
+        None => {
+            if cli.verbose {
+                println!("opsclaw: no subcommand provided");
+            }
+        }
+    }
+}
+
+fn approval_decision_label(decision: ApprovalDecision) -> &'static str {
+    match decision {
+        ApprovalDecision::Approve => "approve",
+        ApprovalDecision::Reject => "reject",
+    }
+}
+
+fn route_to_json(route: slack_adapter::SlackRouteDecision) -> serde_json::Value {
+    match route {
+        slack_adapter::SlackRouteDecision::UrlVerification { challenge } => serde_json::json!({
+            "decision": "url_verification",
+            "challenge": challenge
+        }),
+        slack_adapter::SlackRouteDecision::Mention(mention) => serde_json::json!({
+            "decision": "mention",
+            "channel": mention.channel,
+            "thread_ts": mention.thread_ts,
+            "cleaned_text": mention.cleaned_text,
+            "user_id": mention.user_id
+        }),
+        slack_adapter::SlackRouteDecision::Ignore => serde_json::json!({
+            "decision": "ignore"
+        }),
+    }
+}
+
+fn discord_route_to_json(route: DiscordRouteDecision) -> serde_json::Value {
+    match route {
+        DiscordRouteDecision::SlashCommand(command) => serde_json::json!({
+            "decision": "slash_command",
+            "command_name": command.command_name,
+            "roles": command.roles
+        }),
+        DiscordRouteDecision::Ignore => serde_json::json!({
+            "decision": "ignore"
+        }),
+    }
+}
+
+fn telegram_route_to_json(route: TelegramRouteDecision) -> serde_json::Value {
+    match route {
+        TelegramRouteDecision::Command(command) => serde_json::json!({
+            "decision": "command",
+            "chat_id": command.chat_id,
+            "chat_type": command.chat_type,
+            "command_name": command.command_name,
+            "text": command.text,
+            "is_group": command.is_group
+        }),
+        TelegramRouteDecision::Ignore => serde_json::json!({
+            "decision": "ignore"
+        }),
+    }
+}
+
+fn channels_route_to_json(route: ChannelRouteDecision) -> serde_json::Value {
+    match route {
+        ChannelRouteDecision::Routed(event) => serde_json::json!({
+            "decision": "routed",
+            "platform": event.platform,
+            "route_kind": event.route_kind,
+            "target_ref": event.target_ref,
+            "text": event.text
+        }),
+        ChannelRouteDecision::Ignore => serde_json::json!({
+            "decision": "ignore"
+        }),
+    }
+}
+
+fn slack_response_to_json(payload: SlackResponsePayload) -> serde_json::Value {
+    match payload {
+        SlackResponsePayload::Inline { text } => serde_json::json!({
+            "mode": "inline",
+            "text": text
+        }),
+        SlackResponsePayload::Snippet {
+            preview,
+            file_name,
+            content,
+        } => serde_json::json!({
+            "mode": "snippet",
+            "preview": preview,
+            "file_name": file_name,
+            "content": content
+        }),
+    }
 }

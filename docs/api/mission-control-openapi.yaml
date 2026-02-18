@@ -1,0 +1,204 @@
+openapi: 3.1.0
+info:
+  title: OpsClaw Mission Control API
+  version: 0.1.0-phase4-slice1
+  description: |
+    Contract-first API draft for Mission Control dashboard surfaces.
+    This spec defines payload schemas and endpoint behavior before backend implementation.
+servers:
+  - url: https://api.opsclaw.local
+paths:
+  /api/v1/agents:
+    get:
+      summary: List active dashboard agents
+      operationId: listAgents
+      responses:
+        '200':
+          description: Agent summaries
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/DashboardAgentSummary'
+  /api/v1/kanban:
+    get:
+      summary: Fetch current kanban board snapshot
+      operationId: getKanbanSnapshot
+      responses:
+        '200':
+          description: Kanban board snapshot
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DashboardKanbanSnapshot'
+  /api/v1/activity:
+    get:
+      summary: Fetch recent activity feed items
+      operationId: listActivity
+      responses:
+        '200':
+          description: Activity feed items
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/DashboardActivityItem'
+  /api/v1/approvals:
+    get:
+      summary: List pending approval requests
+      operationId: listApprovalRequests
+      responses:
+        '200':
+          description: Approval requests
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/DashboardApprovalRequest'
+  /api/v1/stream:
+    get:
+      summary: WebSocket stream endpoint
+      operationId: streamDashboardEvents
+      responses:
+        '101':
+          description: Switching Protocols to WebSocket
+      x-opsclaw-websocket-event-schema:
+        $ref: '#/components/schemas/DashboardStreamEvent'
+components:
+  schemas:
+    DashboardAgentStatus:
+      type: string
+      enum: [Idle, InProgress, WaitingApproval, Error, Offline]
+    DashboardAgentSummary:
+      type: object
+      required:
+        - agent_id
+        - name
+        - role
+        - status
+        - soul_profile
+        - skills
+        - token_budget_remaining
+      properties:
+        agent_id:
+          type: string
+        name:
+          type: string
+        role:
+          type: string
+        status:
+          $ref: '#/components/schemas/DashboardAgentStatus'
+        soul_profile:
+          type: string
+        skills:
+          type: array
+          items:
+            type: string
+        token_budget_remaining:
+          type: integer
+          minimum: 0
+    DashboardTaskStage:
+      type: string
+      enum: [Inbox, Assigned, InProgress, Review, Done]
+    DashboardTaskCard:
+      type: object
+      required:
+        - task_id
+        - title
+        - stage
+        - priority
+        - updated_at
+      properties:
+        task_id:
+          type: string
+        title:
+          type: string
+        stage:
+          $ref: '#/components/schemas/DashboardTaskStage'
+        assignee_agent_id:
+          type: string
+          nullable: true
+        priority:
+          type: string
+        updated_at:
+          type: string
+          format: date-time
+    DashboardKanbanColumn:
+      type: object
+      required: [stage, tasks]
+      properties:
+        stage:
+          $ref: '#/components/schemas/DashboardTaskStage'
+        tasks:
+          type: array
+          items:
+            $ref: '#/components/schemas/DashboardTaskCard'
+    DashboardKanbanSnapshot:
+      type: object
+      required: [generated_at, columns]
+      properties:
+        generated_at:
+          type: string
+          format: date-time
+        columns:
+          type: array
+          items:
+            $ref: '#/components/schemas/DashboardKanbanColumn'
+    DashboardActivityItem:
+      type: object
+      required: [event_id, agent_id, event_type, summary, occurred_at]
+      properties:
+        event_id:
+          type: string
+        agent_id:
+          type: string
+        event_type:
+          type: string
+        summary:
+          type: string
+        occurred_at:
+          type: string
+          format: date-time
+    DashboardApprovalRequest:
+      type: object
+      required:
+        - approval_id
+        - run_id
+        - command
+        - blast_radius
+        - rollback_steps
+        - requested_by
+        - requested_at
+      properties:
+        approval_id:
+          type: string
+        run_id:
+          type: string
+        command:
+          type: string
+        blast_radius:
+          type: string
+        rollback_steps:
+          type: string
+        requested_by:
+          type: string
+        requested_at:
+          type: string
+          format: date-time
+    DashboardEventType:
+      type: string
+      enum: [AgentUpdated, KanbanUpdated, ActivityUpdated, ApprovalUpdated]
+    DashboardStreamEvent:
+      type: object
+      required: [event_type, occurred_at, payload_json]
+      properties:
+        event_type:
+          $ref: '#/components/schemas/DashboardEventType'
+        occurred_at:
+          type: string
+          format: date-time
+        payload_json:
+          type: string

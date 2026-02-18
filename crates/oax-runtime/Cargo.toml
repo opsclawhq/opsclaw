@@ -8,4 +8,12 @@ license = "Apache-2.0"
 path = "src/lib.rs"
 
 [dependencies]
+bollard = "0.19.4"
 oax-core = { path = "../oax-core" }
+oax-security = { path = "../oax-security" }
+oax-tools = { path = "../oax-tools" }
+serde = { version = "1.0.228", features = ["derive"] }
+serde_json = "1.0.149"
+
+[dev-dependencies]
+tempfile = "3.23.0"

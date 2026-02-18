@@ -3,7 +3,9 @@ members = [
   "crates/oax-core",
   "crates/oax-runtime",
   "crates/oax-llm",
+  "crates/oax-skills",
   "crates/oax-security",
+  "crates/oax-tools",
   "crates/opsclaw"
 ]
 resolver = "2"
@@ -12,4 +14,3 @@ resolver = "2"
 edition = "2021"
 license = "Apache-2.0"
 version = "0.1.0"
-

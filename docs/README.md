@@ -2,10 +2,44 @@
 
 This documentation is structured for both human readers and coding agents.
 
-## Sections
+## Core Sections
 
-- Getting Started
-- Concepts
-- Skills
-- Architecture
-- API Reference
+- [Getting Started](getting-started.md)
+- [Concepts](concepts.md)
+- [Skills](skills.md)
+- [Architecture](architecture.md)
+- [API Reference](api-reference.md)
+- [Docs Site Navigation](docs-site-index.md)
+
+## Audience Tracks
+
+- [User Guide](user-guide/README.md)
+- [Developer Guide](developer-guide/README.md)
+
+## Engineering Blog
+
+- [Engineering Blog Index](blog/README.md)
+
+## Agent-Readable Index
+
+- [Agent Docs Index](agent-index.yaml)
+
+## Docusaurus Site Commands
+
+- `npm --prefix packages/docs-site install`
+- `npm --prefix packages/docs-site run start`
+- `npm --prefix packages/docs-site run build`
+
+## Release Hardening Commands
+
+- `scripts/docs/validate-release-docs.sh`
+- `scripts/content/generate-engineering-blog.sh --phase <n> --date <yyyy-mm-dd>`
+
+## OpsClaw vs OpenClaw Series Workflow
+
+The recurring comparison series is managed phase-by-phase in:
+
+- `.content/series/opsclaw-vs-openclaw/phase-<n>-comparison.md`
+- `.content/phase-<n>/*opsclaw-vs-openclaw*`
+
+This workflow satisfies content DoD requirements for phase closures.

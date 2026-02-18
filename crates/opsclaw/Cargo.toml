@@ -14,3 +14,11 @@ oax-core = { path = "../oax-core" }
 oax-llm = { path = "../oax-llm" }
 oax-runtime = { path = "../oax-runtime" }
 oax-security = { path = "../oax-security" }
+oax-skills = { path = "../oax-skills" }
+oax-tools = { path = "../oax-tools" }
+serde = { version = "1.0.228", features = ["derive"] }
+serde_json = "1.0.149"
+url = "2.5.8"
+
+[dev-dependencies]
+tempfile = "3.25.0"

@@ -1,0 +1,34 @@
+# OpsClaw Engineering Blog
+
+This directory contains phase-by-phase engineering narratives.
+
+## Cadence
+
+Each phase should include:
+
+1. One phase recap (what shipped)
+2. One design decision post (tradeoffs + rejected alternatives)
+3. One reliability/safety/process post when applicable
+
+## Pipeline
+
+Generate draft social/blog artifacts with:
+
+`scripts/content/phase-delivery-pipeline.sh --phase <n> --slice <id> --date <yyyy-mm-dd> --requirements <csv> --pr-url <url> --summary <text>`
+
+Machine-readable manifests are written to `docs/blog/manifests/`.
+
+Editorial process guide:
+
+- [Editorial Workflow](editorial-workflow.md)
+
+## Current Posts
+
+- [2026-02-17: Phase 2 Content System Baseline](2026-02-17-phase-2-content-system.md)
+- [2026-02-18: Phase 3 v0.1 Launch](2026-02-18-phase-3-v0-1-launch.md)
+- [2026-02-18: Phase 3 Slack Design Decisions](2026-02-18-phase-3-slack-design-decisions.md)
+- [2026-02-18: Phase 4 Mission Control Progress](2026-02-18-phase-4-mission-control-progress.md)
+- [2026-02-18: Phase 4 Design Decisions](2026-02-18-phase-4-design-decisions.md)
+- [2026-02-18: Phase 5 Engineering Recap](2026-02-18-phase-5-engineering-recap.md)
+- [2026-02-18: Phase 5 Engineering Design Decisions](2026-02-18-phase-5-engineering-design-decisions.md)
+- [2026-02-18: Phase 5 Reliability and Process](2026-02-18-phase-5-engineering-reliability-process.md)

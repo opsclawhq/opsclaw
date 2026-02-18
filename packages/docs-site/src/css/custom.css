@@ -1,0 +1,40 @@
+:root {
+  --ifm-color-primary: #0e7490;
+  --ifm-color-primary-dark: #0c677f;
+  --ifm-color-primary-darker: #0b6077;
+  --ifm-color-primary-darkest: #094f61;
+  --ifm-color-primary-light: #1081a1;
+  --ifm-color-primary-lighter: #1188a9;
+  --ifm-color-primary-lightest: #13a0c4;
+  --ifm-code-font-size: 95%;
+}
+
+.hero--opsclaw {
+  background: linear-gradient(135deg, #062b38 0%, #0e7490 55%, #67e8f9 100%);
+  color: #f8fafc;
+  padding: 4rem 0;
+}
+
+.hero__subtitle {
+  max-width: 52rem;
+}
+
+.card-grid {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+}
+
+.card-grid a {
+  border: 1px solid #dbeafe;
+  border-radius: 0.75rem;
+  padding: 1rem;
+  text-decoration: none;
+  color: inherit;
+  background: #ffffff;
+}
+
+.card-grid a:hover {
+  border-color: var(--ifm-color-primary);
+  box-shadow: 0 4px 18px rgba(14, 116, 144, 0.15);
+}
