@@ -82,3 +82,7 @@ Phase 0 establishes a Rust workspace, type boundary generation, and a local infr
   - slash-command payload routing (`route-event`)
   - embed payload rendering (`build-embed`)
   - role authorization checks (`authorize`)
+- `opsclaw telegram` command now exposes deterministic Telegram adapter contracts:
+  - message update routing for group/private chats (`route-event`)
+  - inline keyboard payload rendering (`build-keyboard`)
+  - group-chat support detection (`chat-support`)

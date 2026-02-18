@@ -27,3 +27,4 @@ This track is for operators and team leads who run OpsClaw in real environments.
 
 - [Setup Wizard Preview](setup-wizard-preview.md)
 - [Discord Adapter Preview](discord-adapter-preview.md)
+- [Telegram Adapter Preview](telegram-adapter-preview.md)
