@@ -259,3 +259,15 @@ All notable changes to this project will be documented in this file.
   - approval requests
   - WebSocket stream events
 - Regenerated TypeScript contracts in `packages/sdk/src/generated/types.ts` from the new dashboard types.
+
+## [0.1.0-phase4-slice2] - 2026-02-18
+
+### Added
+
+- New `packages/dashboard` frontend foundation package with:
+  - org hierarchy panel scaffold
+  - agent profile panel scaffold
+  - activity feed panel scaffold
+- Deterministic dashboard view-model helpers in `packages/dashboard/src/lib/view-models.mjs`.
+- Runnable Node tests for hierarchy/profile/feed shaping in `packages/dashboard/tests/view-models.test.mjs`.
+- Contributor guide for the dashboard foundation at `docs/developer-guide/dashboard-frontend-foundation.md`.

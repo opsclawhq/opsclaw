@@ -24,3 +24,7 @@ Use this helper at phase close to scaffold comparison + social artifacts:
 ## Phase 3 Guides
 
 - [Slack Integration Guide](slack-integration.md)
+
+## Phase 4 Guides
+
+- [Mission Control Frontend Foundation](dashboard-frontend-foundation.md)

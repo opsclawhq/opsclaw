@@ -57,3 +57,8 @@ Phase 0 establishes a Rust workspace, type boundary generation, and a local infr
 - Mission Control API is defined contract-first in `docs/api/mission-control-openapi.yaml`.
 - Shared dashboard payload models live in `oax-core::types` and are exported to TypeScript through `typeshare`.
 - Current contract coverage includes agent summaries, kanban board snapshots, activity feed items, approval requests, and WebSocket event envelopes.
+- Dashboard frontend foundation now exists at `packages/dashboard` with:
+  - org hierarchy panel
+  - agent profile panel
+  - activity feed panel
+  - deterministic view-model helpers and runnable Node tests (`node:test`)
