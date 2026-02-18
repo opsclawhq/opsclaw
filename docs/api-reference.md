@@ -272,3 +272,40 @@ Behavior:
 - `opsclaw slack intro-message --agent-json ...`
 - `opsclaw slack plan-discussion --task ... --agents-json ...`
 - `opsclaw slack prepare-response --text ... [--max-chars ...] [--snippet-name ...]`
+
+## Mission Control API Contract (Phase 4 Preview)
+
+Mission Control is now defined contract-first via OpenAPI and shared typed payloads.
+
+### OpenAPI Source
+
+- `docs/api/mission-control-openapi.yaml`
+
+REST contract paths:
+
+- `GET /api/v1/agents`
+- `GET /api/v1/kanban`
+- `GET /api/v1/activity`
+- `GET /api/v1/approvals`
+
+WebSocket contract path:
+
+- `GET /api/v1/stream` (`101` upgrade, schema pointer via `x-opsclaw-websocket-event-schema`)
+
+### Shared Payload Types (`oax_core::types`)
+
+- `DashboardAgentSummary`
+- `DashboardKanbanSnapshot`
+- `DashboardActivityItem`
+- `DashboardApprovalRequest`
+- `DashboardStreamEvent`
+
+Supporting enums:
+
+- `DashboardAgentStatus`
+- `DashboardTaskStage`
+- `DashboardEventType`
+
+The same models are exported to TypeScript via `typeshare` at:
+
+- `packages/sdk/src/generated/types.ts`

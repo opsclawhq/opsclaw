@@ -246,3 +246,16 @@ All notable changes to this project will be documented in this file.
   - `docs/blog/2026-02-18-phase-3-v0-1-launch.md`
   - `docs/blog/2026-02-18-phase-3-slack-design-decisions.md`
 - README index updates for user-guide, developer-guide, and blog tracks to include Phase 3 artifacts.
+
+## [0.1.0-phase4-slice1] - 2026-02-18
+
+### Added
+
+- OpenAPI 3.1 Mission Control contract draft at `docs/api/mission-control-openapi.yaml`.
+- Shared dashboard payload types in `oax-core::types` for:
+  - agent summaries and status
+  - kanban board snapshots and stages
+  - activity feed items
+  - approval requests
+  - WebSocket stream events
+- Regenerated TypeScript contracts in `packages/sdk/src/generated/types.ts` from the new dashboard types.
