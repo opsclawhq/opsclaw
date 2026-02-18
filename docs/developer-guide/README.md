@@ -46,6 +46,10 @@ Use these release hardening helpers before phase gate closure:
 
 - [Phase 1 Safety Integration Audit](phase-1-safety-audit.md)
 
+## Delivery Governance Guides
+
+- [KPI Telemetry Hardening](kpi-telemetry-hardening.md)
+
 ## Phase 3 Guides
 
 - [Slack Integration Guide](slack-integration.md)

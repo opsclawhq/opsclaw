@@ -2,6 +2,20 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.1.0-kpi-telemetry-hardening] - 2026-02-18
+
+### Added
+
+- KPI governance scripts:
+  - `scripts/planning/validate-planning-metadata.sh`
+  - `scripts/planning/audit-project-kpi-snapshots.sh`
+- Contributor guide for strict/permissive KPI gate validation:
+  - `docs/developer-guide/kpi-telemetry-hardening.md`
+- Plan/design/evidence artifacts:
+  - `docs/plans/2026-02-18-kpi-telemetry-hardening-design.md`
+  - `docs/plans/2026-02-18-kpi-telemetry-hardening-slice.md`
+  - `docs/plans/evidence/2026-02-18-kpi-telemetry-hardening-slice.md`
+
 ## [0.1.0-phase1-integration-audit] - 2026-02-18
 
 ### Added
