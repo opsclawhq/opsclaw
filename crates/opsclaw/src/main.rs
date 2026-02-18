@@ -18,7 +18,8 @@ use discord_adapter::{
     DiscordRouteDecision, HttpDiscordApi,
 };
 use slack_adapter::{
-    build_install_url, handle_live_event, resolve_bot_token as resolve_slack_bot_token,
+    build_install_url, handle_live_event as handle_slack_live_event,
+    resolve_bot_token as resolve_slack_bot_token,
     retry_after_seconds, route_for_bot, HttpSlackApi, SlackInstallConfig, SlackLiveDecision,
 };
 use slack_approval::{
@@ -31,8 +32,9 @@ use slack_collaboration::{
 use squad_runtime::{process_inbound_event, run_stdio_loop, RuntimeOutboundEvent};
 use std::path::Path;
 use telegram_adapter::{
-    build_inline_keyboard, is_group_chat, resolve_bot_token, route_telegram_update,
-    run_live_session, HttpTelegramApi, TelegramInlineButton, TelegramLiveConfig,
+    build_inline_keyboard, handle_live_event as handle_telegram_live_event, is_group_chat,
+    resolve_bot_token as resolve_telegram_bot_token, route_telegram_update, run_live_session,
+    HttpTelegramApi, TelegramInlineButton, TelegramLiveConfig, TelegramLiveDecision,
     TelegramLiveOutcome, TelegramRouteDecision,
 };
 
@@ -257,6 +259,28 @@ enum SlackCommands {
 
 #[derive(Subcommand)]
 enum RunCommands {
+    LiveEvent {
+        #[arg(long)]
+        platform: String,
+        #[arg(long)]
+        payload_json: String,
+        #[arg(long)]
+        identity: Option<String>,
+        #[arg(long)]
+        slack_bot_token: Option<String>,
+        #[arg(long, default_value = "SLACK_BOT_TOKEN")]
+        slack_bot_token_env: String,
+        #[arg(long)]
+        discord_bot_token: Option<String>,
+        #[arg(long, default_value = "DISCORD_BOT_TOKEN")]
+        discord_bot_token_env: String,
+        #[arg(long)]
+        telegram_bot_token: Option<String>,
+        #[arg(long, default_value = "TELEGRAM_BOT_TOKEN")]
+        telegram_bot_token_env: String,
+        #[arg(long, value_enum, default_value_t = setup_wizard::Template::SreSquad)]
+        template: setup_wizard::Template,
+    },
     RouteEvent {
         #[arg(long)]
         platform: String,
@@ -473,7 +497,7 @@ fn main() {
                 poll_timeout_seconds,
                 max_updates,
             } => {
-                let resolved_token = match resolve_bot_token(
+                let resolved_token = match resolve_telegram_bot_token(
                     bot_token.as_deref(),
                     Some(bot_token_env.as_str()),
                     "TELEGRAM_BOT_TOKEN",
@@ -761,7 +785,7 @@ fn main() {
                     }
                 };
 
-                match handle_live_event(
+                match handle_slack_live_event(
                     &mut api,
                     payload_json.as_str(),
                     bot_user_id.as_str(),
@@ -782,6 +806,178 @@ fn main() {
             }
         },
         Some(Commands::Run { command }) => match command {
+            RunCommands::LiveEvent {
+                platform,
+                payload_json,
+                identity,
+                slack_bot_token,
+                slack_bot_token_env,
+                discord_bot_token,
+                discord_bot_token_env,
+                telegram_bot_token,
+                telegram_bot_token_env,
+                template,
+            } => {
+                match platform.as_str() {
+                    "slack" => {
+                        let bot_user_id = match identity.as_deref() {
+                            Some(value) if !value.trim().is_empty() => value,
+                            _ => {
+                                eprintln!(
+                                    "run live-event failed: slack requires --identity <bot_user_id>"
+                                );
+                                std::process::exit(1);
+                            }
+                        };
+
+                        let resolved_token = match resolve_slack_bot_token(
+                            slack_bot_token.as_deref(),
+                            Some(slack_bot_token_env.as_str()),
+                            "SLACK_BOT_TOKEN",
+                        ) {
+                            Ok(value) => value,
+                            Err(err) => {
+                                eprintln!("run live-event failed: {err}");
+                                std::process::exit(1);
+                            }
+                        };
+
+                        let mut api = match HttpSlackApi::new(resolved_token) {
+                            Ok(value) => value,
+                            Err(err) => {
+                                eprintln!("run live-event failed: {err}");
+                                std::process::exit(1);
+                            }
+                        };
+
+                        match handle_slack_live_event(
+                            &mut api,
+                            payload_json.as_str(),
+                            bot_user_id,
+                            template_slug(&template),
+                        ) {
+                            Ok(decision) => {
+                                println!(
+                                    "{}",
+                                    serde_json::to_string_pretty(&slack_live_decision_to_json(
+                                        decision
+                                    ))
+                                    .expect(
+                                        "run live-event slack output serialization should succeed",
+                                    )
+                                );
+                            }
+                            Err(err) => {
+                                eprintln!("run live-event failed: {err}");
+                                std::process::exit(1);
+                            }
+                        }
+                    }
+                    "discord" => {
+                        let resolved_token = match resolve_discord_bot_token(
+                            discord_bot_token.as_deref(),
+                            Some(discord_bot_token_env.as_str()),
+                            "DISCORD_BOT_TOKEN",
+                        ) {
+                            Ok(value) => value,
+                            Err(err) => {
+                                eprintln!("run live-event failed: {err}");
+                                std::process::exit(1);
+                            }
+                        };
+
+                        let mut api = match HttpDiscordApi::new(resolved_token) {
+                            Ok(value) => value,
+                            Err(err) => {
+                                eprintln!("run live-event failed: {err}");
+                                std::process::exit(1);
+                            }
+                        };
+
+                        match handle_discord_live_event(
+                            &mut api,
+                            payload_json.as_str(),
+                            template_slug(&template),
+                        ) {
+                            Ok(decision) => {
+                                println!(
+                                    "{}",
+                                    serde_json::to_string_pretty(&discord_live_decision_to_json(
+                                        decision
+                                    ))
+                                    .expect(
+                                        "run live-event discord output serialization should succeed",
+                                    )
+                                );
+                            }
+                            Err(err) => {
+                                eprintln!("run live-event failed: {err}");
+                                std::process::exit(1);
+                            }
+                        }
+                    }
+                    "telegram" => {
+                        let bot_username = match identity.as_deref() {
+                            Some(value) if !value.trim().is_empty() => value,
+                            _ => {
+                                eprintln!(
+                                    "run live-event failed: telegram requires --identity <bot_username>"
+                                );
+                                std::process::exit(1);
+                            }
+                        };
+
+                        let resolved_token = match resolve_telegram_bot_token(
+                            telegram_bot_token.as_deref(),
+                            Some(telegram_bot_token_env.as_str()),
+                            "TELEGRAM_BOT_TOKEN",
+                        ) {
+                            Ok(value) => value,
+                            Err(err) => {
+                                eprintln!("run live-event failed: {err}");
+                                std::process::exit(1);
+                            }
+                        };
+
+                        let mut api = match HttpTelegramApi::new(resolved_token) {
+                            Ok(value) => value,
+                            Err(err) => {
+                                eprintln!("run live-event failed: {err}");
+                                std::process::exit(1);
+                            }
+                        };
+
+                        match handle_telegram_live_event(
+                            &mut api,
+                            payload_json.as_str(),
+                            bot_username,
+                            template_slug(&template),
+                        ) {
+                            Ok(decision) => {
+                                println!(
+                                    "{}",
+                                    serde_json::to_string_pretty(&telegram_live_decision_to_json(
+                                        decision
+                                    ))
+                                    .expect(
+                                        "run live-event telegram output serialization should succeed",
+                                    )
+                                );
+                            }
+                            Err(err) => {
+                                eprintln!("run live-event failed: {err}");
+                                std::process::exit(1);
+                            }
+                        }
+                    }
+                    other => {
+                        eprintln!(
+                            "run live-event failed: unsupported platform `{other}` (expected slack|discord|telegram)"
+                        );
+                        std::process::exit(1);
+                    }
+                }
+            }
             RunCommands::RouteEvent {
                 platform,
                 payload_json,
@@ -972,6 +1168,19 @@ fn telegram_live_to_json(outcome: TelegramLiveOutcome) -> serde_json::Value {
         "replies_sent": outcome.replies_sent,
         "last_update_id": outcome.last_update_id
     })
+}
+
+fn telegram_live_decision_to_json(decision: TelegramLiveDecision) -> serde_json::Value {
+    match decision {
+        TelegramLiveDecision::Replied { chat_id, text } => serde_json::json!({
+            "decision": "replied",
+            "chat_id": chat_id,
+            "text": text
+        }),
+        TelegramLiveDecision::Ignore => serde_json::json!({
+            "decision": "ignore"
+        }),
+    }
 }
 
 fn slack_response_to_json(payload: SlackResponsePayload) -> serde_json::Value {

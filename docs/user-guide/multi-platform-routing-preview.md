@@ -1,6 +1,6 @@
 # Multi-Platform Runtime Guide (`opsclaw run`)
 
-Phase 5 `05-08` adds a unified runtime core so Slack, Discord, and Telegram events can be processed by one squad response engine.
+Phase 5 `05-08` + `05-11` adds a unified runtime core so Slack, Discord, and Telegram events can be processed by one squad response engine and relayed through live platform APIs.
 
 ## One-Shot Event Processing
 
@@ -33,6 +33,42 @@ cargo run -p opsclaw -- run route-event \
   --template sre-squad
 ```
 
+## Unified Live API Relay
+
+Use `run live-event` when you want one runtime entrypoint for platform-native live relay behavior:
+
+Slack (requires bot user id in `--identity`):
+
+```bash
+cargo run -p opsclaw -- run live-event \
+  --platform slack \
+  --payload-json '{"type":"url_verification","challenge":"challenge-123"}' \
+  --identity U_BOT \
+  --slack-bot-token "$SLACK_BOT_TOKEN" \
+  --template sre-squad
+```
+
+Discord:
+
+```bash
+cargo run -p opsclaw -- run live-event \
+  --platform discord \
+  --payload-json '{"type":1}' \
+  --discord-bot-token "$DISCORD_BOT_TOKEN" \
+  --template sre-squad
+```
+
+Telegram (requires bot username in `--identity`):
+
+```bash
+cargo run -p opsclaw -- run live-event \
+  --platform telegram \
+  --payload-json '{"message":{"chat":{"id":42,"type":"private"},"text":""}}' \
+  --identity opsclaw_bot \
+  --telegram-bot-token "$TELEGRAM_BOT_TOKEN" \
+  --template sre-squad
+```
+
 ## Stdio Runtime Loop (NDJSON)
 
 `run stdio` reads newline-delimited JSON events from stdin and emits routed responses:
@@ -46,4 +82,5 @@ printf '%s\n' \
 ## Relationship to `opsclaw telegram live`
 
 - `opsclaw telegram live` is the production Telegram transport loop.
-- `opsclaw run` is the shared platform-agnostic runtime core used for unified event-to-response behavior and parity testing.
+- `opsclaw run route-event` is the shared platform-agnostic runtime contract for route/response parity testing.
+- `opsclaw run live-event` is the runtime-level live relay bridge for Slack/Discord/Telegram API posting paths.
