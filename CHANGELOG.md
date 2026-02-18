@@ -2,6 +2,21 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.1.0-phase0-slice3] - 2026-02-18
+
+### Added
+
+- Root Bun workspace config via:
+  - `package.json`
+  - `bunfig.toml`
+  - `tsconfig.base.json`
+- Package manifests/config normalization for:
+  - `@opsclaw/sdk` (`packages/sdk/package.json`, `packages/sdk/tsconfig.json`)
+  - `@opsclaw/channels` (`packages/channels/*`)
+  - `@opsclaw/dashboard` TypeScript config wiring (`packages/dashboard/tsconfig.json`)
+- Minimal `@opsclaw/channels` contract API and Bun test coverage.
+- Phase 0 Bun monorepo plan/design/evidence docs for slice `00-02`.
+
 ## [0.1.0-phase0-slice2] - 2026-02-18
 
 ### Added

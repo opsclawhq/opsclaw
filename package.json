@@ -1,0 +1,15 @@
+{
+  "name": "opsclaw-workspace",
+  "private": true,
+  "packageManager": "bun@1.2.7",
+  "workspaces": [
+    "packages/*"
+  ],
+  "scripts": {
+    "typecheck": "bun run --filter '*' typecheck"
+  },
+  "devDependencies": {
+    "bun-types": "^1.2.7",
+    "typescript": "^5.7.3"
+  }
+}

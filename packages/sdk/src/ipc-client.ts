@@ -11,10 +11,10 @@ export function buildIpcEnvelope(params: {
   return {
     schema_version: IPC_SCHEMA_VERSION,
     message_type: params.messageType,
-    run_id: params.runId ?? null,
+    run_id: params.runId,
     payload_json: params.payloadJson ?? "{}",
-    ok: null,
-    error: null,
+    ok: undefined,
+    error: undefined,
   };
 }
 

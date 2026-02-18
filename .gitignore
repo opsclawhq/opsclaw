@@ -4,3 +4,4 @@ planning/
 target/
 .worktrees/
 worktrees/
+node_modules/
