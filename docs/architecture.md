@@ -51,3 +51,9 @@ Phase 0 establishes a Rust workspace, type boundary generation, and a local infr
   - visible multi-agent discussion planning with specialist assignment and escalation markers
   - long-response overflow handling to snippet payload + preview
 - additional `opsclaw slack ...` commands expose intro, discussion, and overflow contracts for local Phase 3 viral-moment verification without live Slack networking.
+
+## Phase 4 Foundations (Kickoff)
+
+- Mission Control API is defined contract-first in `docs/api/mission-control-openapi.yaml`.
+- Shared dashboard payload models live in `oax-core::types` and are exported to TypeScript through `typeshare`.
+- Current contract coverage includes agent summaries, kanban board snapshots, activity feed items, approval requests, and WebSocket event envelopes.

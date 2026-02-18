@@ -13,6 +13,82 @@ export interface AgentMessage {
 	content: string;
 }
 
+export interface DashboardActivityItem {
+	event_id: string;
+	agent_id: string;
+	event_type: string;
+	summary: string;
+	occurred_at: string;
+}
+
+export enum DashboardAgentStatus {
+	Idle = "Idle",
+	InProgress = "InProgress",
+	WaitingApproval = "WaitingApproval",
+	Error = "Error",
+	Offline = "Offline",
+}
+
+export interface DashboardAgentSummary {
+	agent_id: string;
+	name: string;
+	role: string;
+	status: DashboardAgentStatus;
+	soul_profile: string;
+	skills: string[];
+	token_budget_remaining: number;
+}
+
+export interface DashboardApprovalRequest {
+	approval_id: string;
+	run_id: string;
+	command: string;
+	blast_radius: string;
+	rollback_steps: string;
+	requested_by: string;
+	requested_at: string;
+}
+
+export enum DashboardTaskStage {
+	Inbox = "Inbox",
+	Assigned = "Assigned",
+	InProgress = "InProgress",
+	Review = "Review",
+	Done = "Done",
+}
+
+export interface DashboardTaskCard {
+	task_id: string;
+	title: string;
+	stage: DashboardTaskStage;
+	assignee_agent_id?: string;
+	priority: string;
+	updated_at: string;
+}
+
+export interface DashboardKanbanColumn {
+	stage: DashboardTaskStage;
+	tasks: DashboardTaskCard[];
+}
+
+export interface DashboardKanbanSnapshot {
+	generated_at: string;
+	columns: DashboardKanbanColumn[];
+}
+
+export enum DashboardEventType {
+	AgentUpdated = "AgentUpdated",
+	KanbanUpdated = "KanbanUpdated",
+	ActivityUpdated = "ActivityUpdated",
+	ApprovalUpdated = "ApprovalUpdated",
+}
+
+export interface DashboardStreamEvent {
+	event_type: DashboardEventType;
+	occurred_at: string;
+	payload_json: string;
+}
+
 export interface IpcEnvelope {
 	schema_version: string;
 	message_type: string;
