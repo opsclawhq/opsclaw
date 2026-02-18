@@ -90,6 +90,10 @@ Phase 0 establishes a Rust workspace, type boundary generation, and a local infr
 - `opsclaw channels` command now exposes deterministic multi-platform routing contracts:
   - platform-agnostic route normalization for Slack/Discord/Telegram (`route-event`)
   - unified route payload fields (`platform`, `route_kind`, `target_ref`, `text`)
+- `opsclaw run` command now exposes unified multi-platform runtime behavior:
+  - `run route-event` converts raw platform payloads into routed squad responses through one response engine
+  - `run stdio` consumes NDJSON inbound events and emits NDJSON routed responses for runtime/process integration
+- `squad_responder` module centralizes template-aware response rendering shared by unified runtime and Telegram live transport.
 - `scripts/content/phase-delivery-pipeline.sh` now exposes deterministic build-in-public artifact generation:
   - per-slice LinkedIn/X drafts in `.content/phase-<n>/`
   - per-slice blog recap/design drafts and machine-readable manifests in `docs/blog/`
