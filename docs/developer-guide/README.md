@@ -42,6 +42,10 @@ Use these release hardening helpers before phase gate closure:
 
 - [Release Packaging](release-packaging.md)
 
+## Phase 1 Guides
+
+- [Phase 1 Safety Integration Audit](phase-1-safety-audit.md)
+
 ## Phase 3 Guides
 
 - [Slack Integration Guide](slack-integration.md)
