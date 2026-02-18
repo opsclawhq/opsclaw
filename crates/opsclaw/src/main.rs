@@ -1,4 +1,5 @@
 use clap::{Parser, Subcommand};
+mod channels_router;
 mod discord_adapter;
 mod ipc_socket;
 mod mcp_stdio;
@@ -8,6 +9,7 @@ mod slack_adapter;
 mod slack_approval;
 mod slack_collaboration;
 mod telegram_adapter;
+use channels_router::{route_platform_event, ChannelPlatform, ChannelRouteDecision};
 use discord_adapter::{
     build_embed, is_role_authorized, route_discord_payload, DiscordRouteDecision,
 };
@@ -52,6 +54,10 @@ enum Commands {
         #[command(subcommand)]
         command: IpcCommands,
     },
+    Channels {
+        #[command(subcommand)]
+        command: ChannelsCommands,
+    },
     Discord {
         #[command(subcommand)]
         command: DiscordCommands,
@@ -89,6 +95,18 @@ enum IpcCommands {
     ServeSockets {
         #[arg(long, default_value = ".opsclaw/sockets")]
         dir: String,
+    },
+}
+
+#[derive(Subcommand)]
+enum ChannelsCommands {
+    RouteEvent {
+        #[arg(long)]
+        platform: String,
+        #[arg(long)]
+        payload_json: String,
+        #[arg(long)]
+        identity: Option<String>,
     },
 }
 
@@ -230,6 +248,39 @@ fn main() {
                 std::process::exit(1);
             }
         }
+        Some(Commands::Channels { command }) => match command {
+            ChannelsCommands::RouteEvent {
+                platform,
+                payload_json,
+                identity,
+            } => {
+                let parsed_platform = match ChannelPlatform::parse(platform.as_str()) {
+                    Ok(value) => value,
+                    Err(err) => {
+                        eprintln!("channels route-event failed: {err}");
+                        std::process::exit(1);
+                    }
+                };
+
+                match route_platform_event(
+                    parsed_platform,
+                    payload_json.as_str(),
+                    identity.as_deref(),
+                ) {
+                    Ok(decision) => {
+                        println!(
+                            "{}",
+                            serde_json::to_string_pretty(&channels_route_to_json(decision))
+                                .expect("channels route output serialization should succeed")
+                        );
+                    }
+                    Err(err) => {
+                        eprintln!("channels route-event failed: {err}");
+                        std::process::exit(1);
+                    }
+                }
+            }
+        },
         Some(Commands::Discord { command }) => match command {
             DiscordCommands::RouteEvent { payload_json } => {
                 match route_discord_payload(payload_json.as_str()) {
@@ -590,6 +641,21 @@ fn telegram_route_to_json(route: TelegramRouteDecision) -> serde_json::Value {
             "is_group": command.is_group
         }),
         TelegramRouteDecision::Ignore => serde_json::json!({
+            "decision": "ignore"
+        }),
+    }
+}
+
+fn channels_route_to_json(route: ChannelRouteDecision) -> serde_json::Value {
+    match route {
+        ChannelRouteDecision::Routed(event) => serde_json::json!({
+            "decision": "routed",
+            "platform": event.platform,
+            "route_kind": event.route_kind,
+            "target_ref": event.target_ref,
+            "text": event.text
+        }),
+        ChannelRouteDecision::Ignore => serde_json::json!({
             "decision": "ignore"
         }),
     }
