@@ -2,6 +2,28 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.1.0-phase5-webhook-rate-limit-hardening] - 2026-02-18
+
+### Added
+
+- Webhook ingress rate-limiting controls for `opsclaw run serve-webhooks`:
+  - `--webhook-rate-limit-max-requests`
+  - `--webhook-rate-limit-window-seconds`
+  - `429` JSON error contract when the request window is saturated
+- Webhook runtime helper:
+  - `enforce_rate_limit(...)` in `crates/opsclaw/src/webhook_runtime.rs`
+  - unit tests for saturation, pruning, and disabled-mode behavior
+- Planning artifacts:
+  - `docs/plans/2026-02-18-phase-5-webhook-rate-limit-hardening-design.md`
+  - `docs/plans/2026-02-18-phase-5-webhook-rate-limit-hardening-slice.md`
+  - `docs/plans/evidence/2026-02-18-phase-5-webhook-rate-limit-hardening-slice.md`
+
+### Changed
+
+- Runtime and architecture docs updated for webhook rate-limit operations:
+  - `docs/user-guide/multi-platform-routing-preview.md`
+  - `docs/architecture.md`
+
 ## [0.1.0-phase5-telegram-onboarding-verify] - 2026-02-18
 
 ### Added

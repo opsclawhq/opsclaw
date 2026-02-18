@@ -1,6 +1,6 @@
 # Multi-Platform Runtime Guide (`opsclaw run`)
 
-Phase 5 `05-08` + `05-11` + `05-12` + `05-13` + `05-14` adds a unified runtime core so Slack, Discord, and Telegram events can be processed by one squad response engine and relayed through live platform APIs.
+Phase 5 `05-08` + `05-11` + `05-12` + `05-13` + `05-14` + `05-16` adds a unified runtime core so Slack, Discord, and Telegram events can be processed by one squad response engine and relayed through live platform APIs.
 
 ## One-Shot Event Processing
 
@@ -142,3 +142,24 @@ Behavior:
 - when `--webhook-shared-secret` is set and the header is missing, ingress responds `401`
 - when the header value mismatches, ingress responds `401`
 - when no shared secret is configured, ingress remains open (local/dev mode)
+
+### Optional Rate-Limit Guard
+
+Enable in-process ingress rate limiting:
+
+```bash
+cargo run -p opsclaw -- run serve-webhooks \
+  --bind 127.0.0.1:8787 \
+  --webhook-rate-limit-max-requests 120 \
+  --webhook-rate-limit-window-seconds 60 \
+  --slack-bot-user-id U_BOT \
+  --telegram-bot-username opsclaw_bot \
+  --slack-bot-token "$SLACK_BOT_TOKEN" \
+  --discord-bot-token "$DISCORD_BOT_TOKEN" \
+  --telegram-bot-token "$TELEGRAM_BOT_TOKEN"
+```
+
+Behavior:
+- requests above the configured limit return `429` with JSON error details
+- limit is global for this server process across all webhook endpoints
+- omit `--webhook-rate-limit-max-requests` to disable local rate limiting
