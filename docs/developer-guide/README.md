@@ -35,6 +35,12 @@ Use these release hardening helpers before phase gate closure:
 - `bun run --filter @opsclaw/channels typecheck`
 - `bun run --filter @opsclaw/sdk typecheck`
 - `bun run --filter @opsclaw/dashboard typecheck`
+- `bash scripts/release/package-opsclaw.sh`
+- `bash scripts/install/verify-local-install.sh`
+
+## Phase 0 Guides
+
+- [Release Packaging](release-packaging.md)
 
 ## Phase 3 Guides
 
