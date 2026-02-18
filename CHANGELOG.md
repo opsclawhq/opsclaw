@@ -2,6 +2,17 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.1.0-phase1-integration-audit] - 2026-02-18
+
+### Added
+
+- Consolidated Phase 1 integration audit design/plan/evidence artifacts:
+  - `docs/plans/2026-02-18-phase-1-integration-audit-design.md`
+  - `docs/plans/2026-02-18-phase-1-integration-audit-slice.md`
+  - `docs/plans/evidence/2026-02-18-phase-1-integration-audit-slice.md`
+- Contributor-facing audit summary:
+  - `docs/developer-guide/phase-1-safety-audit.md`
+
 ## [0.1.0-phase0-slice4] - 2026-02-18
 
 ### Added
