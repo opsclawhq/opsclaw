@@ -225,3 +225,13 @@ All notable changes to this project will be documented in this file.
 - `opsclaw slack build-approval-card` CLI command for generating approval-card payloads with command, expected effect, blast radius, rollback, and action IDs.
 - `opsclaw slack parse-interaction` CLI command for parsing Slack action payloads into typed approve/reject decisions.
 - Approval-card tests covering mutating command card generation, read-only rejection, action-id round-trip parsing, and invalid interaction payload handling.
+
+## [0.1.0-phase3-slice4] - 2026-02-18
+
+### Added
+
+- `opsclaw::slack_collaboration` module for bot intro generation, visible multi-agent discussion planning, and long-response snippet fallback.
+- `opsclaw slack intro-message` CLI command for first-deploy intro message contract checks.
+- `opsclaw slack plan-discussion` CLI command for specialist assignment and escalation-aware visible discussion planning.
+- `opsclaw slack prepare-response` CLI command for Slack length-limit overflow behavior (inline vs snippet payload).
+- Collaboration tests covering intro output, specialist assignment, escalation path, and long-response overflow handling.
