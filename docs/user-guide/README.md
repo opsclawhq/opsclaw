@@ -17,6 +17,10 @@ Docs site route: `/docs/user-guide`
 2. Add one troubleshooting note for common failure modes.
 3. Link release notes and social announcement drafts.
 
+## Phase 0 Guides
+
+- [Install and Self-Host](install-and-self-host.md)
+
 ## Phase 3 Guides
 
 - [Slack Operator Handbook](slack-operator-handbook.md)

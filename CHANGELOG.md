@@ -2,6 +2,19 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.1.0-phase0-slice4] - 2026-02-18
+
+### Added
+
+- Packaging script for host/target release tarballs:
+  - `scripts/release/package-opsclaw.sh`
+- Curl-compatible installer and deterministic local verifier:
+  - `scripts/install/install-opsclaw.sh`
+  - `scripts/install/verify-local-install.sh`
+- User and contributor packaging guides:
+  - `docs/user-guide/install-and-self-host.md`
+  - `docs/developer-guide/release-packaging.md`
+
 ## [0.1.0-phase0-slice3] - 2026-02-18
 
 ### Added
