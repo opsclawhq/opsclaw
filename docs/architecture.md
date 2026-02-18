@@ -80,6 +80,7 @@ Phase 0 establishes a Rust workspace, type boundary generation, and a local infr
   - optional plan writeout to `.opsclaw/setup-wizard-plan.json`
 - `opsclaw discord` command now exposes deterministic Discord adapter contracts:
   - slash-command payload routing (`route-event`)
+  - live-event relay to Discord channel messages (`live-event`)
   - embed payload rendering (`build-embed`)
   - role authorization checks (`authorize`)
 - `opsclaw telegram` command now exposes live + contract Telegram behavior:
