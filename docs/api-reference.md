@@ -207,3 +207,68 @@ Action ID format expected:
 
 - `opsclaw slack build-approval-card --run-id ... --command ... [--rollback-template ...]`
 - `opsclaw slack parse-interaction --payload-json ...`
+
+## Slack Collaboration Contract (Phase 3 Preview)
+
+OpsClaw now includes deterministic Slack collaboration helpers in `opsclaw::slack_collaboration`.
+
+### Intro Message Generation
+
+Function:
+
+- `build_intro_message(profile) -> Result<String, String>`
+
+Profile type:
+
+- `AgentProfile`
+  - `name`
+  - `role`
+  - `specialty`
+  - `personality`
+
+Behavior:
+
+- emits a human-readable first-deploy intro message
+- validates required profile fields (`name`, `role`, `personality`)
+
+### Visible Discussion Planning
+
+Function:
+
+- `plan_visible_discussion(task, agents) -> Result<DiscussionPlan, String>`
+
+Plan type:
+
+- `DiscussionPlan`
+  - `assignee`
+  - `escalation_required`
+  - `turns: Vec<DiscussionTurn>`
+
+Behavior:
+
+- requires at least two agents
+- selects a specialist assignee based on task/specialty keyword overlap
+- marks escalation when no specialty match exists
+- emits visible in-channel turns for multi-agent discussion
+
+### Long Response Overflow Handling
+
+Function:
+
+- `prepare_response_for_slack(text, max_chars, snippet_name) -> Result<SlackResponsePayload, String>`
+
+Payload enum:
+
+- `SlackResponsePayload::Inline { text }`
+- `SlackResponsePayload::Snippet { preview, file_name, content }`
+
+Behavior:
+
+- under-limit response stays inline
+- over-limit response moves to snippet payload with bounded preview and full content preserved
+
+### CLI Helpers
+
+- `opsclaw slack intro-message --agent-json ...`
+- `opsclaw slack plan-discussion --task ... --agents-json ...`
+- `opsclaw slack prepare-response --text ... [--max-chars ...] [--snippet-name ...]`

@@ -46,3 +46,8 @@ Phase 0 establishes a Rust workspace, type boundary generation, and a local infr
   - Slack Block Kit payload rendering with blast radius and rollback guidance
   - interaction action parsing into approve/reject decisions
 - additional `opsclaw slack ...` commands expose approval-card generation and interaction parsing for local HITL contract verification.
+- `opsclaw::slack_collaboration` adds deterministic collaboration logic for:
+  - first-deploy bot intro message generation from typed agent profiles
+  - visible multi-agent discussion planning with specialist assignment and escalation markers
+  - long-response overflow handling to snippet payload + preview
+- additional `opsclaw slack ...` commands expose intro, discussion, and overflow contracts for local Phase 3 viral-moment verification without live Slack networking.

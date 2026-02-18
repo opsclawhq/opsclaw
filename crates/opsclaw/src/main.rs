@@ -1,9 +1,14 @@
 use clap::{Parser, Subcommand};
 mod ipc_socket;
 mod mcp_stdio;
+mod slack_collaboration;
 mod slack_approval;
 mod slack_adapter;
 mod skill_install;
+use slack_collaboration::{
+    build_intro_message, plan_visible_discussion, prepare_response_for_slack, AgentProfile,
+    SlackResponsePayload,
+};
 use slack_approval::{
     build_approval_card, card_to_block_kit_json, parse_interaction_decision, ApprovalDecision,
 };
@@ -94,6 +99,24 @@ enum SlackCommands {
     ParseInteraction {
         #[arg(long)]
         payload_json: String,
+    },
+    IntroMessage {
+        #[arg(long)]
+        agent_json: String,
+    },
+    PlanDiscussion {
+        #[arg(long)]
+        task: String,
+        #[arg(long)]
+        agents_json: String,
+    },
+    PrepareResponse {
+        #[arg(long)]
+        text: String,
+        #[arg(long, default_value_t = 3500)]
+        max_chars: usize,
+        #[arg(long, default_value = "opsclaw-response.txt")]
+        snippet_name: String,
     },
 }
 
@@ -211,6 +234,75 @@ fn main() {
                     }
                 }
             }
+            SlackCommands::IntroMessage { agent_json } => {
+                let profile: AgentProfile = match serde_json::from_str(agent_json.as_str()) {
+                    Ok(value) => value,
+                    Err(err) => {
+                        eprintln!("slack intro-message failed: invalid agent_json: {err}");
+                        std::process::exit(1);
+                    }
+                };
+
+                match build_intro_message(&profile) {
+                    Ok(message) => {
+                        println!(
+                            "{}",
+                            serde_json::to_string_pretty(&serde_json::json!({
+                                "message": message
+                            }))
+                            .expect("intro-message output serialization should succeed")
+                        );
+                    }
+                    Err(err) => {
+                        eprintln!("slack intro-message failed: {err}");
+                        std::process::exit(1);
+                    }
+                }
+            }
+            SlackCommands::PlanDiscussion { task, agents_json } => {
+                let agents: Vec<AgentProfile> = match serde_json::from_str(agents_json.as_str()) {
+                    Ok(value) => value,
+                    Err(err) => {
+                        eprintln!("slack plan-discussion failed: invalid agents_json: {err}");
+                        std::process::exit(1);
+                    }
+                };
+
+                match plan_visible_discussion(task.as_str(), &agents) {
+                    Ok(plan) => {
+                        println!(
+                            "{}",
+                            serde_json::to_string_pretty(&serde_json::json!({
+                                "assignee": plan.assignee,
+                                "escalation_required": plan.escalation_required,
+                                "turns": plan.turns
+                            }))
+                            .expect("plan-discussion output serialization should succeed")
+                        );
+                    }
+                    Err(err) => {
+                        eprintln!("slack plan-discussion failed: {err}");
+                        std::process::exit(1);
+                    }
+                }
+            }
+            SlackCommands::PrepareResponse {
+                text,
+                max_chars,
+                snippet_name,
+            } => match prepare_response_for_slack(text.as_str(), max_chars, snippet_name.as_str()) {
+                Ok(payload) => {
+                    println!(
+                        "{}",
+                        serde_json::to_string_pretty(&slack_response_to_json(payload))
+                            .expect("prepare-response output serialization should succeed")
+                    );
+                }
+                Err(err) => {
+                    eprintln!("slack prepare-response failed: {err}");
+                    std::process::exit(1);
+                }
+            },
         },
         Some(Commands::Mcp {
             command: McpCommands::ServeStdio,
@@ -261,6 +353,25 @@ fn route_to_json(route: slack_adapter::SlackRouteDecision) -> serde_json::Value 
         }),
         slack_adapter::SlackRouteDecision::Ignore => serde_json::json!({
             "decision": "ignore"
+        }),
+    }
+}
+
+fn slack_response_to_json(payload: SlackResponsePayload) -> serde_json::Value {
+    match payload {
+        SlackResponsePayload::Inline { text } => serde_json::json!({
+            "mode": "inline",
+            "text": text
+        }),
+        SlackResponsePayload::Snippet {
+            preview,
+            file_name,
+            content,
+        } => serde_json::json!({
+            "mode": "snippet",
+            "preview": preview,
+            "file_name": file_name,
+            "content": content
         }),
     }
 }
