@@ -2,6 +2,25 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.1.0-phase5-discord-live-relay] - 2026-02-18
+
+### Added
+
+- Live Discord relay path:
+  - `opsclaw discord live-event` command
+  - Discord API transport client (`channels/{id}/messages`) with bot-token auth
+  - live-event decision model for posted/ignore outcomes
+- Planning artifacts:
+  - `docs/plans/2026-02-18-phase-5-discord-live-relay-design.md`
+  - `docs/plans/2026-02-18-phase-5-discord-live-relay-slice.md`
+
+### Changed
+
+- Discord slash route payload now carries `channel_id` for downstream relay handling.
+- User and architecture docs updated for Discord live relay workflow:
+  - `docs/user-guide/discord-adapter-preview.md`
+  - `docs/architecture.md`
+
 ## [0.1.0-phase5-slack-live-relay] - 2026-02-18
 
 ### Added

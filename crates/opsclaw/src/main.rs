@@ -13,7 +13,9 @@ mod squad_runtime;
 mod telegram_adapter;
 use channels_router::{route_platform_event, ChannelPlatform, ChannelRouteDecision};
 use discord_adapter::{
-    build_embed, is_role_authorized, route_discord_payload, DiscordRouteDecision,
+    build_embed, handle_live_event as handle_discord_live_event, is_role_authorized,
+    resolve_bot_token as resolve_discord_bot_token, route_discord_payload, DiscordLiveDecision,
+    DiscordRouteDecision, HttpDiscordApi,
 };
 use slack_adapter::{
     build_install_url, handle_live_event, resolve_bot_token as resolve_slack_bot_token,
@@ -126,6 +128,16 @@ enum DiscordCommands {
     RouteEvent {
         #[arg(long)]
         payload_json: String,
+    },
+    LiveEvent {
+        #[arg(long)]
+        payload_json: String,
+        #[arg(long)]
+        bot_token: Option<String>,
+        #[arg(long, default_value = "DISCORD_BOT_TOKEN")]
+        bot_token_env: String,
+        #[arg(long, value_enum, default_value_t = setup_wizard::Template::SreSquad)]
+        template: setup_wizard::Template,
     },
     BuildEmbed {
         #[arg(long)]
@@ -350,6 +362,50 @@ fn main() {
                     }
                     Err(err) => {
                         eprintln!("discord route-event failed: {err}");
+                        std::process::exit(1);
+                    }
+                }
+            }
+            DiscordCommands::LiveEvent {
+                payload_json,
+                bot_token,
+                bot_token_env,
+                template,
+            } => {
+                let resolved_token = match resolve_discord_bot_token(
+                    bot_token.as_deref(),
+                    Some(bot_token_env.as_str()),
+                    "DISCORD_BOT_TOKEN",
+                ) {
+                    Ok(value) => value,
+                    Err(err) => {
+                        eprintln!("discord live-event failed: {err}");
+                        std::process::exit(1);
+                    }
+                };
+
+                let mut api = match HttpDiscordApi::new(resolved_token) {
+                    Ok(value) => value,
+                    Err(err) => {
+                        eprintln!("discord live-event failed: {err}");
+                        std::process::exit(1);
+                    }
+                };
+
+                match handle_discord_live_event(
+                    &mut api,
+                    payload_json.as_str(),
+                    template_slug(&template),
+                ) {
+                    Ok(decision) => {
+                        println!(
+                            "{}",
+                            serde_json::to_string_pretty(&discord_live_decision_to_json(decision))
+                                .expect("discord live-event output serialization should succeed")
+                        );
+                    }
+                    Err(err) => {
+                        eprintln!("discord live-event failed: {err}");
                         std::process::exit(1);
                     }
                 }
@@ -839,9 +895,23 @@ fn discord_route_to_json(route: DiscordRouteDecision) -> serde_json::Value {
         DiscordRouteDecision::SlashCommand(command) => serde_json::json!({
             "decision": "slash_command",
             "command_name": command.command_name,
-            "roles": command.roles
+            "roles": command.roles,
+            "channel_id": command.channel_id
         }),
         DiscordRouteDecision::Ignore => serde_json::json!({
+            "decision": "ignore"
+        }),
+    }
+}
+
+fn discord_live_decision_to_json(decision: DiscordLiveDecision) -> serde_json::Value {
+    match decision {
+        DiscordLiveDecision::Posted { channel_id, text } => serde_json::json!({
+            "decision": "posted",
+            "channel_id": channel_id,
+            "text": text
+        }),
+        DiscordLiveDecision::Ignore => serde_json::json!({
             "decision": "ignore"
         }),
     }
