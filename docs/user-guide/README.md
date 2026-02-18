@@ -26,3 +26,4 @@ This track is for operators and team leads who run OpsClaw in real environments.
 ## Phase 5 Guides
 
 - [Setup Wizard Preview](setup-wizard-preview.md)
+- [Discord Adapter Preview](discord-adapter-preview.md)

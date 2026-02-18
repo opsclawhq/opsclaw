@@ -2,6 +2,18 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.1.0-phase5-slice2] - 2026-02-18
+
+### Added
+
+- Discord adapter module at `crates/opsclaw/src/discord_adapter.rs`.
+- `opsclaw discord` CLI command family with contract checks:
+  - `route-event`
+  - `build-embed`
+  - `authorize`
+- Discord adapter preview guide at `docs/user-guide/discord-adapter-preview.md`.
+- Phase 5 Discord adapter plan/design/evidence docs for slice `05-02`.
+
 ## [0.1.0-phase5-slice1] - 2026-02-18
 
 ### Added
