@@ -2,6 +2,18 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.1.0-phase0-slice2] - 2026-02-18
+
+### Added
+
+- Docusaurus site scaffold at `packages/docs-site/` (config, sidebar, homepage, styling).
+- Docs IA entrypoint at `docs/docs-site-index.md`.
+- Docs-site run/build commands in `docs/README.md`.
+- Route annotations for user and developer tracks in:
+  - `docs/user-guide/README.md`
+  - `docs/developer-guide/README.md`
+- Phase 0 Docusaurus plan/design/evidence docs for slice `00-04/00-05`.
+
 ## [0.1.0-phase5-slice6] - 2026-02-18
 
 ### Added

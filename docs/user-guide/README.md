@@ -2,6 +2,8 @@
 
 This track is for operators and team leads who run OpsClaw in real environments.
 
+Docs site route: `/docs/user-guide`
+
 ## Scope
 
 - Installation and first run (`opsclaw init` path)
