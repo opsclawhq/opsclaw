@@ -1,6 +1,6 @@
 # Multi-Platform Runtime Guide (`opsclaw run`)
 
-Phase 5 `05-08` + `05-11` + `05-12` + `05-13` adds a unified runtime core so Slack, Discord, and Telegram events can be processed by one squad response engine and relayed through live platform APIs.
+Phase 5 `05-08` + `05-11` + `05-12` + `05-13` + `05-14` adds a unified runtime core so Slack, Discord, and Telegram events can be processed by one squad response engine and relayed through live platform APIs.
 
 ## One-Shot Event Processing
 
@@ -121,3 +121,24 @@ Endpoints:
 - `POST /slack/events`
 - `POST /discord/interactions`
 - `POST /telegram/webhook`
+
+### Optional Shared-Secret Guard
+
+Enable a request-level shared-secret check to reject unauthorized ingress:
+
+```bash
+cargo run -p opsclaw -- run serve-webhooks \
+  --bind 127.0.0.1:8787 \
+  --webhook-shared-secret "$OPSCLAW_WEBHOOK_SECRET" \
+  --webhook-secret-header X-OpsClaw-Webhook-Secret \
+  --slack-bot-user-id U_BOT \
+  --telegram-bot-username opsclaw_bot \
+  --slack-bot-token "$SLACK_BOT_TOKEN" \
+  --discord-bot-token "$DISCORD_BOT_TOKEN" \
+  --telegram-bot-token "$TELEGRAM_BOT_TOKEN"
+```
+
+Behavior:
+- when `--webhook-shared-secret` is set and the header is missing, ingress responds `401`
+- when the header value mismatches, ingress responds `401`
+- when no shared secret is configured, ingress remains open (local/dev mode)

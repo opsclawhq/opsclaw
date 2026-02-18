@@ -2,6 +2,28 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.1.0-phase5-webhook-auth-hardening] - 2026-02-18
+
+### Added
+
+- Shared-secret webhook ingress guard:
+  - `--webhook-shared-secret` option for `opsclaw run serve-webhooks`
+  - `--webhook-secret-header` option (default `X-OpsClaw-Webhook-Secret`)
+  - request-level validation with explicit `401` JSON errors for missing/invalid secrets
+- Webhook auth validation helper:
+  - `validate_shared_secret(...)` in `crates/opsclaw/src/webhook_runtime.rs`
+  - unit tests for missing/mismatched/matching secret scenarios
+- Planning artifacts:
+  - `docs/plans/2026-02-18-phase-5-webhook-auth-hardening-design.md`
+  - `docs/plans/2026-02-18-phase-5-webhook-auth-hardening-slice.md`
+  - `docs/plans/evidence/2026-02-18-phase-5-webhook-auth-hardening-slice.md`
+
+### Changed
+
+- Runtime and architecture docs updated for webhook auth-hardening usage:
+  - `docs/user-guide/multi-platform-routing-preview.md`
+  - `docs/architecture.md`
+
 ## [0.1.0-phase5-webhook-ingress-runtime] - 2026-02-18
 
 ### Added
