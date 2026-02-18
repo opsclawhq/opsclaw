@@ -111,3 +111,54 @@ Current schema constant:
 - `control.stop` -> `control.stop.ack` (requests socket server shutdown)
 
 Malformed input, invalid schema versions, and unsupported message types produce an `error` envelope.
+
+## Slack Adapter Contract (Phase 3 Preview)
+
+OpsClaw now includes a pure Slack adapter contract in `opsclaw::slack_adapter`.
+
+### OAuth Install URL
+
+Type:
+
+- `SlackInstallConfig`
+  - `client_id`
+  - `scopes`
+  - `user_scopes`
+  - `redirect_uri`
+  - `state`
+
+Function:
+
+- `build_install_url(&SlackInstallConfig) -> Result<String, String>`
+
+CLI helper:
+
+- `opsclaw slack install-url --client-id ... --scope ... --state ...`
+
+### Event Routing
+
+Function:
+
+- `route_for_bot(payload_json, bot_user_id) -> Result<SlackRouteDecision, String>`
+
+Decisions:
+
+- `UrlVerification { challenge }`
+- `Mention(SlackMentionRoute { channel, thread_ts, cleaned_text, user_id })`
+- `Ignore`
+
+Threading rule:
+
+- if `event.thread_ts` exists, reply to it
+- otherwise reply to `event.ts`
+
+### Rate Limit Policy
+
+Function:
+
+- `retry_after_seconds(status_code, retry_after_header) -> Option<u64>`
+
+Behavior:
+
+- returns parsed seconds only for HTTP `429` with valid `Retry-After` value
+- all other cases return `None`

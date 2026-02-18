@@ -35,3 +35,9 @@ Phase 0 establishes a Rust workspace, type boundary generation, and a local infr
   - `runtime.sock` for runtime-plane request forwarding.
   - `control.sock` for health and stop control messages.
 - `packages/sdk/src/ipc-client.ts` provides a Node SDK helper for one-request/one-response socket calls.
+- `opsclaw::slack_adapter` adds deterministic Slack adapter logic for:
+  - OAuth install URL generation
+  - event payload mention routing
+  - thread reply target selection (`thread_ts` fallback to `ts`)
+  - 429 retry policy extraction from `Retry-After`
+- `opsclaw slack ...` CLI commands expose adapter behavior for local contract verification before live Slack transport wiring.

@@ -206,3 +206,13 @@ All notable changes to this project will be documented in this file.
 - `opsclaw ipc serve-sockets --dir <path>` command with dual Unix sockets (`runtime.sock`, `control.sock`).
 - `opsclaw::ipc_socket` server with line-based NDJSON request/response behavior and stop/health control handling.
 - TypeScript SDK helper at `packages/sdk/src/ipc-client.ts` for sending one-request/one-response IPC calls over Unix sockets.
+
+## [0.1.0-phase3-slice2] - 2026-02-17
+
+### Added
+
+- `opsclaw::slack_adapter` module for Slack install URL generation, event mention routing, thread targeting, and rate-limit retry policy helpers.
+- `opsclaw slack install-url` CLI command for deterministic OAuth install URL generation from typed parameters.
+- `opsclaw slack route-event` CLI command for local Slack event routing contract checks.
+- `opsclaw slack retry-after` CLI command for retry policy decisions from status code + `Retry-After`.
+- Slack adapter tests covering mention routing, thread fallback behavior, URL verification handling, and 429 retry extraction.
