@@ -8,6 +8,8 @@ mod skill_install;
 mod slack_adapter;
 mod slack_approval;
 mod slack_collaboration;
+mod squad_responder;
+mod squad_runtime;
 mod telegram_adapter;
 use channels_router::{route_platform_event, ChannelPlatform, ChannelRouteDecision};
 use discord_adapter::{
@@ -21,6 +23,7 @@ use slack_collaboration::{
     build_intro_message, plan_visible_discussion, prepare_response_for_slack, AgentProfile,
     SlackResponsePayload,
 };
+use squad_runtime::{process_inbound_event, run_stdio_loop, RuntimeOutboundEvent};
 use std::path::Path;
 use telegram_adapter::{
     build_inline_keyboard, is_group_chat, resolve_bot_token, route_telegram_update,
@@ -70,6 +73,10 @@ enum Commands {
     Slack {
         #[command(subcommand)]
         command: SlackCommands,
+    },
+    Run {
+        #[command(subcommand)]
+        command: RunCommands,
     },
     Mcp {
         #[command(subcommand)]
@@ -218,6 +225,26 @@ enum SlackCommands {
         max_chars: usize,
         #[arg(long, default_value = "opsclaw-response.txt")]
         snippet_name: String,
+    },
+}
+
+#[derive(Subcommand)]
+enum RunCommands {
+    RouteEvent {
+        #[arg(long)]
+        platform: String,
+        #[arg(long)]
+        payload_json: String,
+        #[arg(long)]
+        identity: Option<String>,
+        #[arg(long, value_enum, default_value_t = setup_wizard::Template::SreSquad)]
+        template: setup_wizard::Template,
+    },
+    Stdio {
+        #[arg(long, value_enum, default_value_t = setup_wizard::Template::SreSquad)]
+        template: setup_wizard::Template,
+        #[arg(long)]
+        max_events: Option<usize>,
     },
 }
 
@@ -637,6 +664,62 @@ fn main() {
                 }
             }
         },
+        Some(Commands::Run { command }) => match command {
+            RunCommands::RouteEvent {
+                platform,
+                payload_json,
+                identity,
+                template,
+            } => match process_inbound_event(
+                platform.as_str(),
+                payload_json.as_str(),
+                identity.as_deref(),
+                template_slug(&template),
+            ) {
+                Ok(Some(route)) => {
+                    println!(
+                        "{}",
+                        serde_json::to_string_pretty(&runtime_route_to_json(route))
+                            .expect("runtime route output serialization should succeed")
+                    );
+                }
+                Ok(None) => {
+                    println!(
+                        "{}",
+                        serde_json::to_string_pretty(&serde_json::json!({
+                            "decision": "ignore"
+                        }))
+                        .expect("runtime ignore output serialization should succeed")
+                    );
+                }
+                Err(err) => {
+                    eprintln!("run route-event failed: {err}");
+                    std::process::exit(1);
+                }
+            },
+            RunCommands::Stdio {
+                template,
+                max_events,
+            } => {
+                let stdin = std::io::stdin();
+                let stdout = std::io::stdout();
+                let mut writer = stdout.lock();
+                let reader = stdin.lock();
+
+                match run_stdio_loop(reader, &mut writer, template_slug(&template), max_events) {
+                    Ok(outcome) => {
+                        eprintln!(
+                            "run stdio: events_processed={} responses_emitted={}",
+                            outcome.events_processed, outcome.responses_emitted
+                        );
+                    }
+                    Err(err) => {
+                        eprintln!("run stdio failed: {err}");
+                        std::process::exit(1);
+                    }
+                }
+            }
+        },
         Some(Commands::Mcp {
             command: McpCommands::ServeStdio,
         }) => {
@@ -732,6 +815,16 @@ fn channels_route_to_json(route: ChannelRouteDecision) -> serde_json::Value {
             "decision": "ignore"
         }),
     }
+}
+
+fn runtime_route_to_json(route: RuntimeOutboundEvent) -> serde_json::Value {
+    serde_json::json!({
+        "decision": "routed",
+        "platform": route.platform,
+        "target_ref": route.target_ref,
+        "route_kind": route.route_kind,
+        "text": route.text
+    })
 }
 
 fn template_slug(template: &setup_wizard::Template) -> &'static str {

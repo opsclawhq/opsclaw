@@ -2,6 +2,29 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.1.0-phase5-unified-runtime-core] - 2026-02-18
+
+### Added
+
+- Unified multi-platform runtime core:
+  - `opsclaw run route-event` for one-shot platform payload to squad response conversion
+  - `opsclaw run stdio` for NDJSON event ingestion/output
+- Shared responder module:
+  - `crates/opsclaw/src/squad_responder.rs`
+  - reused by both unified runtime and Telegram live transport
+- Planning artifacts:
+  - `docs/plans/2026-02-18-phase-5-unified-runtime-core-design.md`
+  - `docs/plans/2026-02-18-phase-5-unified-runtime-core-slice.md`
+  - `docs/plans/evidence/2026-02-18-phase-5-unified-runtime-core-slice.md`
+
+### Changed
+
+- `crates/opsclaw/src/telegram_adapter.rs` now uses shared squad responder logic.
+- User and architecture docs updated for unified runtime workflows:
+  - `docs/user-guide/multi-platform-routing-preview.md`
+  - `docs/user-guide/README.md`
+  - `docs/architecture.md`
+
 ## [0.1.0-phase5-telegram-live-squad] - 2026-02-18
 
 ### Added

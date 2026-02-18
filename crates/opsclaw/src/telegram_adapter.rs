@@ -1,3 +1,7 @@
+use crate::squad_responder::{
+    agent_reply, approval_message, callback_ack_message, help_message, squad_message,
+    start_message,
+};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use std::env;
@@ -400,9 +404,9 @@ fn build_reply_for_update(
         TelegramRouteDecision::Command(command) => {
             let command_name = command.command_name.to_ascii_lowercase();
             let (text, reply_markup) = match command_name.as_str() {
-                "start" => (build_start_message(template), None),
-                "help" => (build_help_message(), None),
-                "squad" => (build_squad_message(template), None),
+                "start" => (start_message(template), None),
+                "help" => (help_message(), None),
+                "squad" => (squad_message(template), None),
                 "approve" => {
                     let keyboard = build_inline_keyboard(vec![vec![
                         TelegramInlineButton {
@@ -416,11 +420,11 @@ fn build_reply_for_update(
                     ]])?;
 
                     (
-                        "Approval requested. Choose an action below.".to_string(),
+                        approval_message(),
                         Some(keyboard),
                     )
                 }
-                _ => (build_agent_reply(template, command.text.as_str()), None),
+                _ => (agent_reply(template, command.text.as_str()), None),
             };
 
             Ok(Some(TelegramOutgoingMessage {
@@ -446,95 +450,11 @@ fn build_callback_reply(update: &Value) -> Option<TelegramOutgoingMessage> {
         .and_then(|value| value.get("id"))
         .and_then(Value::as_i64)?;
 
-    let text = match data {
-        "approve" => "Approval recorded: proceeding with the safe execution plan.",
-        "reject" => "Approval rejected: execution cancelled and escalation requested.",
-        other => {
-            return Some(TelegramOutgoingMessage {
-                chat_id,
-                text: format!("Callback received: `{other}`"),
-                reply_markup: None,
-            });
-        }
-    };
-
     Some(TelegramOutgoingMessage {
         chat_id,
-        text: text.to_string(),
+        text: callback_ack_message(data),
         reply_markup: None,
     })
-}
-
-fn build_start_message(template: &str) -> String {
-    format!(
-        "OpsClaw is live. {}\n\nCommands:\n/start\n/help\n/squad\n/approve\n\nMention the bot in group chats or send a private message to start.",
-        build_squad_message(template)
-    )
-}
-
-fn build_help_message() -> String {
-    "OpsClaw commands:\n/start - intro and quick start\n/help - command reference\n/squad - list active squad members\n/approve - preview inline approval keyboard\n\nIn groups, include @botname in your message.".to_string()
-}
-
-fn build_squad_message(template: &str) -> String {
-    let members = squad_members(template);
-    let mut lines = vec![format!("Active {} squad:", template_label(template))];
-    for (name, role) in members {
-        lines.push(format!("- {name} ({role})"));
-    }
-    lines.join("\n")
-}
-
-fn build_agent_reply(template: &str, text: &str) -> String {
-    let members = squad_members(template);
-    let trimmed = text.trim();
-    if trimmed.is_empty() {
-        return "I received an empty request. Share the issue and I will route it.".to_string();
-    }
-
-    let index = trimmed
-        .bytes()
-        .fold(0usize, |acc, value| acc.wrapping_add(value as usize))
-        % members.len();
-    let (name, role) = members[index];
-
-    format!(
-        "{name} ({role}) taking point: `{trimmed}`\nNext: assess risk, propose safe action, and report status."
-    )
-}
-
-fn template_label(template: &str) -> &'static str {
-    let normalized = normalized_template(template);
-    match normalized.as_str() {
-        "dev-ops-team" => "DevOps",
-        "incident-response" => "Incident Response",
-        _ => "SRE",
-    }
-}
-
-fn squad_members(template: &str) -> [(&'static str, &'static str); 3] {
-    let normalized = normalized_template(template);
-    match normalized.as_str() {
-        "dev-ops-team" => [
-            ("Dax", "Delivery Engineer"),
-            ("Piper", "Platform Operator"),
-            ("Scout", "Reliability Guard"),
-        ],
-        "incident-response" => [
-            ("Blaze", "Incident Commander"),
-            ("Pulse", "Comms Lead"),
-            ("Anchor", "Recovery Engineer"),
-        ],
-        _ => [
-            ("Remy", "SRE"),
-            ("Ferris", "Platform Engineer"),
-            ("Nova", "Incident Commander"),
-        ],
-    }
-}
-
-fn normalized_template(template: &str) -> String {
-    template.trim().to_ascii_lowercase()
 }
 
 #[cfg(test)]

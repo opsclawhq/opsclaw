@@ -34,5 +34,5 @@ Docs site route: `/docs/user-guide`
 - [Setup Wizard Preview](setup-wizard-preview.md)
 - [Discord Adapter Preview](discord-adapter-preview.md)
 - [Telegram Live Squad Guide](telegram-adapter-preview.md)
-- [Multi-Platform Routing Preview](multi-platform-routing-preview.md)
+- [Multi-Platform Runtime Guide](multi-platform-routing-preview.md)
 - [Build-in-Public Pipeline](build-in-public-pipeline.md)
