@@ -7,6 +7,7 @@ mod skill_install;
 mod slack_adapter;
 mod slack_approval;
 mod slack_collaboration;
+mod telegram_adapter;
 use discord_adapter::{
     build_embed, is_role_authorized, route_discord_payload, DiscordRouteDecision,
 };
@@ -19,6 +20,10 @@ use slack_collaboration::{
     SlackResponsePayload,
 };
 use std::path::Path;
+use telegram_adapter::{
+    build_inline_keyboard, is_group_chat, route_telegram_update, TelegramInlineButton,
+    TelegramRouteDecision,
+};
 
 #[derive(Parser)]
 #[command(name = "opsclaw", version)]
@@ -50,6 +55,10 @@ enum Commands {
     Discord {
         #[command(subcommand)]
         command: DiscordCommands,
+    },
+    Telegram {
+        #[command(subcommand)]
+        command: TelegramCommands,
     },
     Slack {
         #[command(subcommand)]
@@ -100,6 +109,24 @@ enum DiscordCommands {
         required_role: String,
         #[arg(long)]
         roles_json: String,
+    },
+}
+
+#[derive(Subcommand)]
+enum TelegramCommands {
+    RouteEvent {
+        #[arg(long)]
+        payload_json: String,
+        #[arg(long)]
+        bot_username: String,
+    },
+    BuildKeyboard {
+        #[arg(long)]
+        buttons_json: String,
+    },
+    ChatSupport {
+        #[arg(long)]
+        chat_type: String,
     },
 }
 
@@ -254,6 +281,61 @@ fn main() {
                         "authorized": authorized
                     }))
                     .expect("discord authorize output serialization should succeed")
+                );
+            }
+        },
+        Some(Commands::Telegram { command }) => match command {
+            TelegramCommands::RouteEvent {
+                payload_json,
+                bot_username,
+            } => match route_telegram_update(payload_json.as_str(), bot_username.as_str()) {
+                Ok(decision) => {
+                    println!(
+                        "{}",
+                        serde_json::to_string_pretty(&telegram_route_to_json(decision))
+                            .expect("telegram route output serialization should succeed")
+                    );
+                }
+                Err(err) => {
+                    eprintln!("telegram route-event failed: {err}");
+                    std::process::exit(1);
+                }
+            },
+            TelegramCommands::BuildKeyboard { buttons_json } => {
+                let buttons: Vec<Vec<TelegramInlineButton>> =
+                    match serde_json::from_str(buttons_json.as_str()) {
+                        Ok(value) => value,
+                        Err(err) => {
+                            eprintln!(
+                                "telegram build-keyboard failed: invalid buttons_json: {err}"
+                            );
+                            std::process::exit(1);
+                        }
+                    };
+
+                match build_inline_keyboard(buttons) {
+                    Ok(keyboard) => {
+                        println!(
+                            "{}",
+                            serde_json::to_string_pretty(&keyboard)
+                                .expect("telegram keyboard output serialization should succeed")
+                        );
+                    }
+                    Err(err) => {
+                        eprintln!("telegram build-keyboard failed: {err}");
+                        std::process::exit(1);
+                    }
+                }
+            }
+            TelegramCommands::ChatSupport { chat_type } => {
+                let group_supported = is_group_chat(chat_type.as_str());
+                println!(
+                    "{}",
+                    serde_json::to_string_pretty(&serde_json::json!({
+                        "chat_type": chat_type,
+                        "group_supported": group_supported
+                    }))
+                    .expect("telegram chat-support output serialization should succeed")
                 );
             }
         },
@@ -492,6 +574,22 @@ fn discord_route_to_json(route: DiscordRouteDecision) -> serde_json::Value {
             "roles": command.roles
         }),
         DiscordRouteDecision::Ignore => serde_json::json!({
+            "decision": "ignore"
+        }),
+    }
+}
+
+fn telegram_route_to_json(route: TelegramRouteDecision) -> serde_json::Value {
+    match route {
+        TelegramRouteDecision::Command(command) => serde_json::json!({
+            "decision": "command",
+            "chat_id": command.chat_id,
+            "chat_type": command.chat_type,
+            "command_name": command.command_name,
+            "text": command.text,
+            "is_group": command.is_group
+        }),
+        TelegramRouteDecision::Ignore => serde_json::json!({
             "decision": "ignore"
         }),
     }
