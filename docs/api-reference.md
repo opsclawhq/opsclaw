@@ -162,3 +162,48 @@ Behavior:
 
 - returns parsed seconds only for HTTP `429` with valid `Retry-After` value
 - all other cases return `None`
+
+## Slack Approval Card Contract (Phase 3 Preview)
+
+OpsClaw now includes a pure Slack approval-card contract in `opsclaw::slack_approval`.
+
+### Approval Card Generation
+
+Function:
+
+- `build_approval_card(run_id, command, rollback_template) -> Result<SlackApprovalCard, String>`
+
+Behavior:
+
+- uses `oax_tools::approval::plan_command_execution` to derive:
+  - `expected_effect`
+  - `blast_radius`
+  - `rollback_steps`
+- rejects read-only commands (`AllowReadOnly`) for card generation
+- emits stable action IDs:
+  - `opsclaw:approval:<run_id>:approve`
+  - `opsclaw:approval:<run_id>:reject`
+
+Slack payload renderer:
+
+- `card_to_block_kit_json(&SlackApprovalCard) -> serde_json::Value`
+
+### Interaction Decision Parsing
+
+Function:
+
+- `parse_interaction_decision(payload_json) -> Result<SlackInteractionDecision, String>`
+
+Decision enum:
+
+- `ApprovalDecision::Approve`
+- `ApprovalDecision::Reject`
+
+Action ID format expected:
+
+- `opsclaw:approval:<run_id>:approve|reject`
+
+### CLI Helpers
+
+- `opsclaw slack build-approval-card --run-id ... --command ... [--rollback-template ...]`
+- `opsclaw slack parse-interaction --payload-json ...`

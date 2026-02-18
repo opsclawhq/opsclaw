@@ -1,8 +1,12 @@
 use clap::{Parser, Subcommand};
 mod ipc_socket;
 mod mcp_stdio;
+mod slack_approval;
 mod slack_adapter;
 mod skill_install;
+use slack_approval::{
+    build_approval_card, card_to_block_kit_json, parse_interaction_decision, ApprovalDecision,
+};
 use slack_adapter::{build_install_url, retry_after_seconds, route_for_bot, SlackInstallConfig};
 use std::path::Path;
 
@@ -79,6 +83,18 @@ enum SlackCommands {
         #[arg(long)]
         retry_after: Option<String>,
     },
+    BuildApprovalCard {
+        #[arg(long)]
+        run_id: String,
+        #[arg(long)]
+        command: String,
+        #[arg(long)]
+        rollback_template: Option<String>,
+    },
+    ParseInteraction {
+        #[arg(long)]
+        payload_json: String,
+    },
 }
 
 fn main() {
@@ -146,6 +162,55 @@ fn main() {
                     .expect("retry output serialization should succeed")
                 );
             }
+            SlackCommands::BuildApprovalCard {
+                run_id,
+                command,
+                rollback_template,
+            } => match build_approval_card(
+                run_id.as_str(),
+                command.as_str(),
+                rollback_template.as_deref(),
+            ) {
+                Ok(card) => {
+                    let block_kit = card_to_block_kit_json(&card);
+                    println!(
+                        "{}",
+                        serde_json::to_string_pretty(&serde_json::json!({
+                            "run_id": card.run_id,
+                            "command": card.command,
+                            "expected_effect": card.expected_effect,
+                            "blast_radius": card.blast_radius,
+                            "rollback_steps": card.rollback_steps,
+                            "approve_action_id": card.approve_action_id,
+                            "reject_action_id": card.reject_action_id,
+                            "slack_payload": block_kit
+                        }))
+                        .expect("approval-card output serialization should succeed")
+                    );
+                }
+                Err(err) => {
+                    eprintln!("slack build-approval-card failed: {err}");
+                    std::process::exit(1);
+                }
+            },
+            SlackCommands::ParseInteraction { payload_json } => {
+                match parse_interaction_decision(payload_json.as_str()) {
+                    Ok(parsed) => {
+                        println!(
+                            "{}",
+                            serde_json::to_string_pretty(&serde_json::json!({
+                                "run_id": parsed.run_id,
+                                "decision": approval_decision_label(parsed.decision)
+                            }))
+                            .expect("interaction output serialization should succeed")
+                        );
+                    }
+                    Err(err) => {
+                        eprintln!("slack parse-interaction failed: {err}");
+                        std::process::exit(1);
+                    }
+                }
+            }
         },
         Some(Commands::Mcp {
             command: McpCommands::ServeStdio,
@@ -171,6 +236,13 @@ fn main() {
                 println!("opsclaw: no subcommand provided");
             }
         }
+    }
+}
+
+fn approval_decision_label(decision: ApprovalDecision) -> &'static str {
+    match decision {
+        ApprovalDecision::Approve => "approve",
+        ApprovalDecision::Reject => "reject",
     }
 }
 

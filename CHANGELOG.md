@@ -216,3 +216,12 @@ All notable changes to this project will be documented in this file.
 - `opsclaw slack route-event` CLI command for local Slack event routing contract checks.
 - `opsclaw slack retry-after` CLI command for retry policy decisions from status code + `Retry-After`.
 - Slack adapter tests covering mention routing, thread fallback behavior, URL verification handling, and 429 retry extraction.
+
+## [0.1.0-phase3-slice3] - 2026-02-18
+
+### Added
+
+- `opsclaw::slack_approval` module for Slack approval-card generation and interaction decision parsing.
+- `opsclaw slack build-approval-card` CLI command for generating approval-card payloads with command, expected effect, blast radius, rollback, and action IDs.
+- `opsclaw slack parse-interaction` CLI command for parsing Slack action payloads into typed approve/reject decisions.
+- Approval-card tests covering mutating command card generation, read-only rejection, action-id round-trip parsing, and invalid interaction payload handling.
