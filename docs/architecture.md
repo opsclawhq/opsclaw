@@ -97,7 +97,7 @@ Phase 0 establishes a Rust workspace, type boundary generation, and a local infr
   - platform-agnostic route normalization for Slack/Discord/Telegram (`route-event`)
   - unified route payload fields (`platform`, `route_kind`, `target_ref`, `text`)
 - `opsclaw run` command now exposes unified multi-platform runtime behavior:
-  - `run serve-webhooks` hosts native HTTP ingress endpoints for Slack/Discord/Telegram webhook payload dispatch with optional shared-secret request validation
+  - `run serve-webhooks` hosts native HTTP ingress endpoints for Slack/Discord/Telegram webhook payload dispatch with optional shared-secret validation and in-process rate limiting
   - `run live-stdio` consumes NDJSON inbound events and continuously dispatches platform-native live handlers in one process
   - `run live-event` dispatches one payload to platform-native live relay handlers for Slack/Discord/Telegram
   - `run route-event` converts raw platform payloads into routed squad responses through one response engine

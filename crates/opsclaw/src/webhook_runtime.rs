@@ -1,3 +1,5 @@
+use std::collections::VecDeque;
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum WebhookPlatform {
     Slack,
@@ -37,6 +39,42 @@ pub fn validate_shared_secret(
     Ok(())
 }
 
+pub fn enforce_rate_limit(
+    request_timestamps: &mut VecDeque<u64>,
+    now_epoch_seconds: u64,
+    max_requests: Option<usize>,
+    window_seconds: u64,
+) -> Result<(), String> {
+    let Some(max) = max_requests else {
+        return Ok(());
+    };
+
+    if max == 0 {
+        return Err("webhook rate limit max requests must be greater than zero".to_string());
+    }
+
+    if window_seconds == 0 {
+        return Err("webhook rate limit window seconds must be greater than zero".to_string());
+    }
+
+    while let Some(first_seen) = request_timestamps.front().copied() {
+        if now_epoch_seconds.saturating_sub(first_seen) >= window_seconds {
+            request_timestamps.pop_front();
+        } else {
+            break;
+        }
+    }
+
+    if request_timestamps.len() >= max {
+        return Err(format!(
+            "webhook rate limit exceeded: max {max} requests per {window_seconds}s"
+        ));
+    }
+
+    request_timestamps.push_back(now_epoch_seconds);
+    Ok(())
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -73,5 +111,33 @@ mod tests {
         validate_shared_secret(Some("expected-secret"), Some("expected-secret"))
             .expect("matching secret should pass");
         validate_shared_secret(None, None).expect("open ingress should pass");
+    }
+
+    #[test]
+    fn rate_limit_rejects_when_window_is_full() {
+        let mut timestamps = VecDeque::from(vec![100, 110, 119]);
+
+        let err = enforce_rate_limit(&mut timestamps, 120, Some(3), 60)
+            .expect_err("window should be saturated");
+
+        assert!(err.contains("webhook rate limit exceeded"));
+    }
+
+    #[test]
+    fn rate_limit_allows_after_window_prune() {
+        let mut timestamps = VecDeque::from(vec![10, 20, 79]);
+
+        enforce_rate_limit(&mut timestamps, 80, Some(3), 60)
+            .expect("old entries should be pruned");
+
+        assert_eq!(timestamps, VecDeque::from(vec![79, 80]));
+    }
+
+    #[test]
+    fn rate_limit_is_disabled_when_max_is_missing() {
+        let mut timestamps = VecDeque::from(vec![1, 2, 3]);
+        enforce_rate_limit(&mut timestamps, 4, None, 60)
+            .expect("missing max limit should disable limiting");
+        assert_eq!(timestamps, VecDeque::from(vec![1, 2, 3]));
     }
 }

@@ -34,13 +34,14 @@ use slack_collaboration::{
 };
 use squad_runtime::{process_inbound_event, run_stdio_loop, RuntimeOutboundEvent};
 use std::path::Path;
+use std::time::{SystemTime, UNIX_EPOCH};
 use telegram_adapter::{
     build_inline_keyboard, handle_live_event as handle_telegram_live_event, is_group_chat,
     resolve_bot_token as resolve_telegram_bot_token, route_telegram_update, run_live_session,
     verify_bot_identity, HttpTelegramApi, TelegramApi, TelegramInlineButton, TelegramLiveConfig,
     TelegramLiveDecision, TelegramLiveOutcome, TelegramOutgoingMessage, TelegramRouteDecision,
 };
-use webhook_runtime::{platform_from_path, validate_shared_secret, WebhookPlatform};
+use webhook_runtime::{enforce_rate_limit, platform_from_path, validate_shared_secret, WebhookPlatform};
 
 #[derive(Parser)]
 #[command(name = "opsclaw", version)]
@@ -284,6 +285,10 @@ enum RunCommands {
         webhook_shared_secret: Option<String>,
         #[arg(long, default_value = "X-OpsClaw-Webhook-Secret")]
         webhook_secret_header: String,
+        #[arg(long)]
+        webhook_rate_limit_max_requests: Option<usize>,
+        #[arg(long, default_value_t = 60)]
+        webhook_rate_limit_window_seconds: u64,
         #[arg(long)]
         slack_bot_user_id: String,
         #[arg(long)]
@@ -944,6 +949,8 @@ fn main() {
                 max_requests,
                 webhook_shared_secret,
                 webhook_secret_header,
+                webhook_rate_limit_max_requests,
+                webhook_rate_limit_window_seconds,
                 slack_bot_user_id,
                 telegram_bot_username,
                 slack_bot_token,
@@ -963,9 +970,24 @@ fn main() {
                     }
                 };
 
+                if webhook_rate_limit_max_requests == Some(0) {
+                    eprintln!(
+                        "run serve-webhooks failed: --webhook-rate-limit-max-requests must be greater than zero"
+                    );
+                    std::process::exit(1);
+                }
+
+                if webhook_rate_limit_window_seconds == 0 {
+                    eprintln!(
+                        "run serve-webhooks failed: --webhook-rate-limit-window-seconds must be greater than zero"
+                    );
+                    std::process::exit(1);
+                }
+
                 eprintln!("run serve-webhooks: listening on {}", bind);
 
                 let mut requests_processed = 0usize;
+                let mut request_timestamps = std::collections::VecDeque::new();
                 let mut slack_api: Option<HttpSlackApi> = None;
                 let mut discord_api: Option<HttpDiscordApi> = None;
                 let mut telegram_api: Option<HttpTelegramApi> = None;
@@ -984,6 +1006,35 @@ fn main() {
                             std::process::exit(1);
                         }
                     };
+
+                    let now_epoch_seconds = match SystemTime::now().duration_since(UNIX_EPOCH) {
+                        Ok(value) => value.as_secs(),
+                        Err(err) => {
+                            eprintln!("run serve-webhooks failed: system clock error: {err}");
+                            std::process::exit(1);
+                        }
+                    };
+
+                    if let Err(err) = enforce_rate_limit(
+                        &mut request_timestamps,
+                        now_epoch_seconds,
+                        webhook_rate_limit_max_requests,
+                        webhook_rate_limit_window_seconds,
+                    ) {
+                        let response =
+                            tiny_http::Response::from_string(serde_json::json!({ "error": err }).to_string())
+                                .with_status_code(tiny_http::StatusCode(429))
+                                .with_header(
+                                    tiny_http::Header::from_bytes(
+                                        &b"Content-Type"[..],
+                                        &b"application/json"[..],
+                                    )
+                                    .expect("content-type header should build"),
+                                );
+                        let _ = request.respond(response);
+                        requests_processed += 1;
+                        continue;
+                    }
 
                     let method = request.method().as_str().to_string();
                     if method != "POST" {
