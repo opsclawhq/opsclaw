@@ -78,3 +78,76 @@ export const mockKanbanTasks = [
     assignee_agent_id: "remy"
   }
 ];
+
+export const mockEconomicsSnapshot = {
+  agents: [
+    {
+      agent_id: "remy",
+      tokens_consumed: 12000,
+      api_spend_usd: 2.4,
+      incidents_handled: 3,
+      minutes_saved: 90
+    },
+    {
+      agent_id: "ferris",
+      tokens_consumed: 9000,
+      api_spend_usd: 1.8,
+      incidents_handled: 2,
+      minutes_saved: 60
+    },
+    {
+      agent_id: "wren",
+      tokens_consumed: 7000,
+      api_spend_usd: 1.3,
+      incidents_handled: 1,
+      minutes_saved: 45
+    }
+  ]
+};
+
+export const mockConversations = [
+  {
+    conversation_id: "conv-1",
+    title: "Payments deploy rollback",
+    entries: [
+      {
+        kind: "message",
+        actor: "remy",
+        text: "Investigating deploy regression in payments.",
+        occurred_at: "2026-02-18T03:00:00Z"
+      },
+      {
+        kind: "tool_call",
+        actor: "remy",
+        command: "kubectl get pods -n payments",
+        output: "api-1 CrashLoopBackOff",
+        occurred_at: "2026-02-18T03:01:00Z"
+      },
+      {
+        kind: "message",
+        actor: "ferris",
+        text: "Rollback checklist validated, requesting approval.",
+        occurred_at: "2026-02-18T03:02:00Z"
+      }
+    ]
+  },
+  {
+    conversation_id: "conv-2",
+    title: "Idle node group rightsizing",
+    entries: [
+      {
+        kind: "message",
+        actor: "wren",
+        text: "Analyzed cluster utilization; preparing cost optimization proposal.",
+        occurred_at: "2026-02-18T03:10:00Z"
+      },
+      {
+        kind: "tool_call",
+        actor: "wren",
+        command: "kubectl top nodes",
+        output: "avg cpu 22%, avg mem 31%",
+        occurred_at: "2026-02-18T03:11:00Z"
+      }
+    ]
+  }
+];

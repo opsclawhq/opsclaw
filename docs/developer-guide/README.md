@@ -29,3 +29,4 @@ Use this helper at phase close to scaffold comparison + social artifacts:
 
 - [Mission Control Frontend Foundation](dashboard-frontend-foundation.md)
 - [Mission Control Kanban and Approval Stream](dashboard-kanban-approvals.md)
+- [Mission Control Economics and Conversation Viewer](dashboard-economics-conversations.md)
