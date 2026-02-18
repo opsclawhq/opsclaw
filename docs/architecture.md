@@ -85,6 +85,7 @@ Phase 0 establishes a Rust workspace, type boundary generation, and a local infr
   - role authorization checks (`authorize`)
 - `opsclaw telegram` command now exposes live + contract Telegram behavior:
   - live long-poll runtime bridge (`live`) with real bot-token transport via Telegram HTTP API
+  - one-shot live update relay (`handle_live_event`) for runtime-level dispatch
   - message update routing for group/private chats (`route-event`)
   - inline keyboard payload rendering (`build-keyboard`)
   - group-chat support detection (`chat-support`)
@@ -95,6 +96,7 @@ Phase 0 establishes a Rust workspace, type boundary generation, and a local infr
   - platform-agnostic route normalization for Slack/Discord/Telegram (`route-event`)
   - unified route payload fields (`platform`, `route_kind`, `target_ref`, `text`)
 - `opsclaw run` command now exposes unified multi-platform runtime behavior:
+  - `run live-event` dispatches one payload to platform-native live relay handlers for Slack/Discord/Telegram
   - `run route-event` converts raw platform payloads into routed squad responses through one response engine
   - `run stdio` consumes NDJSON inbound events and emits NDJSON routed responses for runtime/process integration
 - `squad_responder` module centralizes template-aware response rendering shared by unified runtime and Telegram live transport.

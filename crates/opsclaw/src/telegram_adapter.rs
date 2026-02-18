@@ -47,6 +47,13 @@ pub struct TelegramLiveOutcome {
     pub last_update_id: Option<i64>,
 }
 
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+#[serde(tag = "decision", rename_all = "snake_case")]
+pub enum TelegramLiveDecision {
+    Replied { chat_id: i64, text: String },
+    Ignore,
+}
+
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct TelegramOutgoingMessage {
     pub chat_id: i64,
@@ -242,6 +249,34 @@ pub fn run_live_session(
         replies_sent,
         last_update_id,
     })
+}
+
+pub fn handle_live_event(
+    api: &mut dyn TelegramApi,
+    payload_json: &str,
+    bot_username: &str,
+    template: &str,
+) -> Result<TelegramLiveDecision, String> {
+    if bot_username.trim().is_empty() {
+        return Err("telegram live-event requires non-empty bot_username".to_string());
+    }
+
+    if template.trim().is_empty() {
+        return Err("telegram live-event requires non-empty template".to_string());
+    }
+
+    let update: Value = serde_json::from_str(payload_json)
+        .map_err(|err| format!("invalid telegram update json: {err}"))?;
+
+    match build_reply_for_update(&update, bot_username, template)? {
+        Some(reply) => {
+            let chat_id = reply.chat_id;
+            let text = reply.text.clone();
+            api.send_message(reply)?;
+            Ok(TelegramLiveDecision::Replied { chat_id, text })
+        }
+        None => Ok(TelegramLiveDecision::Ignore),
+    }
 }
 
 pub fn route_telegram_update(
@@ -673,5 +708,47 @@ mod tests {
 
         run_live_session(&mut mock, &config).expect("live session should succeed");
         assert!(mock.sent_messages[0].text.contains("Approval recorded"));
+    }
+
+    #[test]
+    fn live_event_posts_reply_for_group_mention() {
+        let payload = r#"{
+            "update_id": 200,
+            "message": {
+                "chat": { "id": 42, "type": "group" },
+                "text": "hey @opsclaw_bot status"
+            }
+        }"#;
+        let mut mock = MockTelegramApi::with_updates(vec![]);
+
+        let decision = handle_live_event(&mut mock, payload, "opsclaw_bot", "sre-squad")
+            .expect("live event should succeed");
+
+        match decision {
+            TelegramLiveDecision::Replied { chat_id, text } => {
+                assert_eq!(chat_id, 42);
+                assert!(text.contains("taking point"));
+                assert_eq!(mock.sent_messages.len(), 1);
+            }
+            _ => panic!("expected replied decision"),
+        }
+    }
+
+    #[test]
+    fn live_event_ignores_non_routable_update() {
+        let payload = r#"{
+            "update_id": 201,
+            "message": {
+                "chat": { "id": 42, "type": "private" },
+                "text": ""
+            }
+        }"#;
+        let mut mock = MockTelegramApi::with_updates(vec![]);
+
+        let decision = handle_live_event(&mut mock, payload, "opsclaw_bot", "sre-squad")
+            .expect("live event should succeed");
+
+        assert_eq!(decision, TelegramLiveDecision::Ignore);
+        assert!(mock.sent_messages.is_empty());
     }
 }

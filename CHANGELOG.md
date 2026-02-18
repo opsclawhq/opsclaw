@@ -2,6 +2,26 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.1.0-phase5-live-event-runtime] - 2026-02-18
+
+### Added
+
+- Unified runtime live relay bridge:
+  - `opsclaw run live-event` command for Slack/Discord/Telegram dispatch
+  - platform-scoped auth args/env wiring for Slack/Discord/Telegram bot tokens
+- Telegram one-shot live relay behavior:
+  - `TelegramLiveDecision` (`replied|ignore`)
+  - `telegram_adapter::handle_live_event(...)` API-posting handler
+- Planning artifacts:
+  - `docs/plans/2026-02-18-phase-5-live-event-runtime-design.md`
+  - `docs/plans/2026-02-18-phase-5-live-event-runtime-slice.md`
+
+### Changed
+
+- User and architecture docs updated for runtime-level live relay usage:
+  - `docs/user-guide/multi-platform-routing-preview.md`
+  - `docs/architecture.md`
+
 ## [0.1.0-phase5-discord-live-relay] - 2026-02-18
 
 ### Added
