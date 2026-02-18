@@ -28,6 +28,14 @@ Use these release hardening helpers before phase gate closure:
 - `scripts/docs/validate-release-docs.sh`
 - `scripts/content/generate-engineering-blog.sh --phase <n> --date <yyyy-mm-dd>`
 
+## Phase 0 Workspace Package Commands
+
+- `bun install`
+- `bun run --filter @opsclaw/channels test`
+- `bun run --filter @opsclaw/channels typecheck`
+- `bun run --filter @opsclaw/sdk typecheck`
+- `bun run --filter @opsclaw/dashboard typecheck`
+
 ## Phase 3 Guides
 
 - [Slack Integration Guide](slack-integration.md)
