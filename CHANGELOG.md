@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.1.0-phase4-slice4] - 2026-02-18
+
+### Added
+
+- Dashboard economics/conversation view-model module at `packages/dashboard/src/lib/economics-conversation.mjs`.
+- Contract-shaped mock economics snapshot and transcript payloads in `packages/dashboard/src/lib/mock-data.mjs`.
+- `EconomicsPanel` and `ConversationViewerPanel` Mission Control surfaces.
+- Deterministic economics/transcript tests at `packages/dashboard/tests/economics-conversation.test.mjs`.
+- Contributor guide for economics and transcript viewer architecture at `docs/developer-guide/dashboard-economics-conversations.md`.
+
 ## [0.1.0-phase4-slice3] - 2026-02-18
 
 ### Added

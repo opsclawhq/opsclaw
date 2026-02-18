@@ -66,3 +66,7 @@ Phase 0 establishes a Rust workspace, type boundary generation, and a local infr
   - kanban stage transitions across `Inbox -> Assigned -> In Progress -> Review -> Done`
   - approval queue lifecycle (`requested`, `approved`, `rejected`)
   - activity-feed append behavior from dashboard stream events
+- Dashboard economics and transcript surfaces now cover:
+  - per-agent token/spend/incident/minutes-saved accounting rows
+  - ROI summary math (spend vs estimated value saved)
+  - conversation transcript viewer with tool-call command/output entries
