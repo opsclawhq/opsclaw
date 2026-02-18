@@ -23,8 +23,9 @@ use slack_collaboration::{
 };
 use std::path::Path;
 use telegram_adapter::{
-    build_inline_keyboard, is_group_chat, route_telegram_update, TelegramInlineButton,
-    TelegramRouteDecision,
+    build_inline_keyboard, is_group_chat, resolve_bot_token, route_telegram_update,
+    run_live_session, HttpTelegramApi, TelegramInlineButton, TelegramLiveConfig,
+    TelegramLiveOutcome, TelegramRouteDecision,
 };
 
 #[derive(Parser)]
@@ -137,6 +138,20 @@ enum TelegramCommands {
         payload_json: String,
         #[arg(long)]
         bot_username: String,
+    },
+    Live {
+        #[arg(long)]
+        bot_username: String,
+        #[arg(long)]
+        bot_token: Option<String>,
+        #[arg(long, default_value = "TELEGRAM_BOT_TOKEN")]
+        bot_token_env: String,
+        #[arg(long, value_enum, default_value_t = setup_wizard::Template::SreSquad)]
+        template: setup_wizard::Template,
+        #[arg(long, default_value_t = 10)]
+        poll_timeout_seconds: u16,
+        #[arg(long)]
+        max_updates: Option<usize>,
     },
     BuildKeyboard {
         #[arg(long)]
@@ -352,6 +367,64 @@ fn main() {
                     std::process::exit(1);
                 }
             },
+            TelegramCommands::Live {
+                bot_username,
+                bot_token,
+                bot_token_env,
+                template,
+                poll_timeout_seconds,
+                max_updates,
+            } => {
+                let resolved_token = match resolve_bot_token(
+                    bot_token.as_deref(),
+                    Some(bot_token_env.as_str()),
+                    "TELEGRAM_BOT_TOKEN",
+                ) {
+                    Ok(value) => value,
+                    Err(err) => {
+                        eprintln!("telegram live failed: {err}");
+                        std::process::exit(1);
+                    }
+                };
+
+                let mut api = match HttpTelegramApi::new(resolved_token) {
+                    Ok(value) => value,
+                    Err(err) => {
+                        eprintln!("telegram live failed: {err}");
+                        std::process::exit(1);
+                    }
+                };
+
+                let config = TelegramLiveConfig {
+                    bot_username,
+                    template: template_slug(&template).to_string(),
+                    max_updates,
+                    poll_timeout_seconds,
+                };
+
+                eprintln!(
+                    "telegram live: polling started (template={}, max_updates={})",
+                    config.template,
+                    config
+                        .max_updates
+                        .map(|value| value.to_string())
+                        .unwrap_or_else(|| "unbounded".to_string())
+                );
+
+                match run_live_session(&mut api, &config) {
+                    Ok(outcome) => {
+                        println!(
+                            "{}",
+                            serde_json::to_string_pretty(&telegram_live_to_json(outcome))
+                                .expect("telegram live output serialization should succeed")
+                        );
+                    }
+                    Err(err) => {
+                        eprintln!("telegram live failed: {err}");
+                        std::process::exit(1);
+                    }
+                }
+            }
             TelegramCommands::BuildKeyboard { buttons_json } => {
                 let buttons: Vec<Vec<TelegramInlineButton>> =
                     match serde_json::from_str(buttons_json.as_str()) {
@@ -659,6 +732,22 @@ fn channels_route_to_json(route: ChannelRouteDecision) -> serde_json::Value {
             "decision": "ignore"
         }),
     }
+}
+
+fn template_slug(template: &setup_wizard::Template) -> &'static str {
+    match template {
+        setup_wizard::Template::SreSquad => "sre-squad",
+        setup_wizard::Template::DevOpsTeam => "dev-ops-team",
+        setup_wizard::Template::IncidentResponse => "incident-response",
+    }
+}
+
+fn telegram_live_to_json(outcome: TelegramLiveOutcome) -> serde_json::Value {
+    serde_json::json!({
+        "updates_processed": outcome.updates_processed,
+        "replies_sent": outcome.replies_sent,
+        "last_update_id": outcome.last_update_id
+    })
 }
 
 fn slack_response_to_json(payload: SlackResponsePayload) -> serde_json::Value {

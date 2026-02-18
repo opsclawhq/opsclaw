@@ -2,6 +2,30 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.1.0-phase5-telegram-live-squad] - 2026-02-18
+
+### Added
+
+- Live Telegram runtime in `opsclaw`:
+  - `opsclaw telegram live` long-poll session command
+  - bot token resolution via `--bot-token` or env var
+  - squad-style command handling (`/start`, `/help`, `/squad`) and group mention replies
+- HTTP Telegram transport implementation and testable API abstraction in:
+  - `crates/opsclaw/src/telegram_adapter.rs`
+- Slice planning artifacts:
+  - `docs/plans/2026-02-18-phase-5-telegram-live-squad-design.md`
+  - `docs/plans/2026-02-18-phase-5-telegram-live-squad-slice.md`
+  - `docs/plans/evidence/2026-02-18-phase-5-telegram-live-squad-slice.md`
+
+### Changed
+
+- User docs updated for real Telegram operator flow:
+  - `docs/user-guide/telegram-adapter-preview.md`
+  - `docs/user-guide/setup-wizard-preview.md`
+  - `docs/user-guide/README.md`
+- Architecture docs updated to reflect live Telegram transport:
+  - `docs/architecture.md`
+
 ## [0.1.0-kpi-telemetry-hardening] - 2026-02-18
 
 ### Added

@@ -31,6 +31,18 @@ The command prints JSON with:
 - `within_60_second_goal`
 - `steps[]` with `id`, `title`, `estimated_seconds`, and `required`
 
+## Hand-off to Telegram Live Runtime
+
+After selecting a template in `opsclaw init`, run Telegram live transport with the same template:
+
+```bash
+export TELEGRAM_BOT_TOKEN="<your-bot-token>"
+
+cargo run -p opsclaw -- telegram live \
+  --bot-username "<bot-username>" \
+  --template sre-squad
+```
+
 ## Current Limitation
 
-This slice provides deterministic wizard planning logic. Full interactive TUI flow and platform provisioning steps are scheduled in later Phase 5 slices.
+`opsclaw init` remains a deterministic planning scaffold (no interactive TUI provisioning yet). Live Telegram chat transport is now available via `opsclaw telegram live`.
