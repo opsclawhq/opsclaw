@@ -1,6 +1,6 @@
 # Multi-Platform Runtime Guide (`opsclaw run`)
 
-Phase 5 `05-08` + `05-11` + `05-12` adds a unified runtime core so Slack, Discord, and Telegram events can be processed by one squad response engine and relayed through live platform APIs.
+Phase 5 `05-08` + `05-11` + `05-12` + `05-13` adds a unified runtime core so Slack, Discord, and Telegram events can be processed by one squad response engine and relayed through live platform APIs.
 
 ## One-Shot Event Processing
 
@@ -102,3 +102,22 @@ printf '%s\n' \
 - `opsclaw run route-event` is the shared platform-agnostic runtime contract for route/response parity testing.
 - `opsclaw run live-event` is the runtime-level live relay bridge for Slack/Discord/Telegram API posting paths.
 - `opsclaw run live-stdio` is the always-on NDJSON relay loop for mixed multi-platform live events in one process.
+
+## Native Webhook Ingress
+
+`run serve-webhooks` hosts built-in HTTP endpoints for Slack/Discord/Telegram webhook POSTs:
+
+```bash
+cargo run -p opsclaw -- run serve-webhooks \
+  --bind 127.0.0.1:8787 \
+  --slack-bot-user-id U_BOT \
+  --telegram-bot-username opsclaw_bot \
+  --slack-bot-token "$SLACK_BOT_TOKEN" \
+  --discord-bot-token "$DISCORD_BOT_TOKEN" \
+  --telegram-bot-token "$TELEGRAM_BOT_TOKEN"
+```
+
+Endpoints:
+- `POST /slack/events`
+- `POST /discord/interactions`
+- `POST /telegram/webhook`

@@ -2,6 +2,29 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.1.0-phase5-webhook-ingress-runtime] - 2026-02-18
+
+### Added
+
+- Native webhook ingress runtime:
+  - `opsclaw run serve-webhooks` command
+  - local HTTP endpoints for platform payload ingress:
+    - `POST /slack/events`
+    - `POST /discord/interactions`
+    - `POST /telegram/webhook`
+- Webhook runtime path resolver module:
+  - `crates/opsclaw/src/webhook_runtime.rs`
+  - deterministic path-to-platform mapping with explicit unsupported-path errors
+- Planning artifacts:
+  - `docs/plans/2026-02-18-phase-5-webhook-ingress-runtime-design.md`
+  - `docs/plans/2026-02-18-phase-5-webhook-ingress-runtime-slice.md`
+
+### Changed
+
+- Runtime docs and architecture updated for built-in webhook ingress operation:
+  - `docs/user-guide/multi-platform-routing-preview.md`
+  - `docs/architecture.md`
+
 ## [0.1.0-phase5-live-stdio-runtime] - 2026-02-18
 
 ### Added
