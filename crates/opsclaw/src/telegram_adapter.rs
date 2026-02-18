@@ -54,6 +54,13 @@ pub enum TelegramLiveDecision {
     Ignore,
 }
 
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+pub struct TelegramBotIdentity {
+    pub id: i64,
+    pub username: String,
+    pub is_bot: bool,
+}
+
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct TelegramOutgoingMessage {
     pub chat_id: i64,
@@ -62,6 +69,7 @@ pub struct TelegramOutgoingMessage {
 }
 
 pub trait TelegramApi {
+    fn get_me(&mut self) -> Result<TelegramBotIdentity, String>;
     fn get_updates(&mut self, offset: Option<i64>, timeout_seconds: u16)
     -> Result<Vec<Value>, String>;
     fn send_message(&mut self, message: TelegramOutgoingMessage) -> Result<(), String>;
@@ -90,6 +98,51 @@ impl HttpTelegramApi {
 }
 
 impl TelegramApi for HttpTelegramApi {
+    fn get_me(&mut self) -> Result<TelegramBotIdentity, String> {
+        let response = self
+            .client
+            .get(self.endpoint("getMe").as_str())
+            .call()
+            .map_err(|err| format!("telegram getMe request failed: {err}"))?;
+
+        let parsed: Value = response
+            .into_json()
+            .map_err(|err| format!("telegram getMe response parse failed: {err}"))?;
+
+        if !parsed
+            .get("ok")
+            .and_then(Value::as_bool)
+            .unwrap_or(false)
+        {
+            return Err(format!("telegram getMe returned non-ok payload: {parsed}"));
+        }
+
+        let result = parsed
+            .get("result")
+            .ok_or_else(|| "telegram getMe missing `result` object".to_string())?;
+
+        let id = result
+            .get("id")
+            .and_then(Value::as_i64)
+            .ok_or_else(|| "telegram getMe missing numeric `result.id`".to_string())?;
+
+        let username = result
+            .get("username")
+            .and_then(Value::as_str)
+            .ok_or_else(|| "telegram getMe missing string `result.username`".to_string())?;
+
+        let is_bot = result
+            .get("is_bot")
+            .and_then(Value::as_bool)
+            .unwrap_or(true);
+
+        Ok(TelegramBotIdentity {
+            id,
+            username: username.to_string(),
+            is_bot,
+        })
+    }
+
     fn get_updates(
         &mut self,
         offset: Option<i64>,
@@ -187,6 +240,29 @@ pub fn resolve_bot_token(
     }
 
     Ok(trimmed.to_string())
+}
+
+pub fn verify_bot_identity(
+    api: &mut dyn TelegramApi,
+    expected_username: Option<&str>,
+) -> Result<TelegramBotIdentity, String> {
+    let identity = api.get_me()?;
+
+    if !identity.is_bot {
+        return Err("telegram getMe identity is not a bot account".to_string());
+    }
+
+    if let Some(expected) = expected_username.map(str::trim).filter(|value| !value.is_empty()) {
+        let normalized_expected = expected.trim_start_matches('@');
+        if !identity.username.eq_ignore_ascii_case(normalized_expected) {
+            return Err(format!(
+                "telegram bot username mismatch: expected `{normalized_expected}` got `{}`",
+                identity.username
+            ));
+        }
+    }
+
+    Ok(identity)
 }
 
 pub fn run_live_session(
@@ -500,6 +576,8 @@ mod tests {
     struct MockTelegramApi {
         updates: VecDeque<Vec<Value>>,
         sent_messages: Vec<TelegramOutgoingMessage>,
+        bot_identity: Option<TelegramBotIdentity>,
+        get_me_error: Option<String>,
     }
 
     impl MockTelegramApi {
@@ -507,11 +585,27 @@ mod tests {
             Self {
                 updates: VecDeque::from(updates),
                 sent_messages: Vec::new(),
+                bot_identity: Some(TelegramBotIdentity {
+                    id: 42,
+                    username: "opsclaw_bot".to_string(),
+                    is_bot: true,
+                }),
+                get_me_error: None,
             }
         }
     }
 
     impl TelegramApi for MockTelegramApi {
+        fn get_me(&mut self) -> Result<TelegramBotIdentity, String> {
+            if let Some(err) = self.get_me_error.as_ref() {
+                return Err(err.clone());
+            }
+
+            self.bot_identity
+                .clone()
+                .ok_or_else(|| "mock getMe identity missing".to_string())
+        }
+
         fn get_updates(
             &mut self,
             _offset: Option<i64>,
@@ -612,6 +706,46 @@ mod tests {
             .expect_err("missing token should fail");
 
         assert!(err.contains("OPSCLAW_TEST_TELEGRAM_TOKEN_MISSING"));
+    }
+
+    #[test]
+    fn verify_bot_identity_returns_identity_when_username_matches() {
+        let mut mock = MockTelegramApi::with_updates(vec![]);
+
+        let identity = verify_bot_identity(&mut mock, Some("@opsclaw_bot"))
+            .expect("matching username should verify");
+
+        assert_eq!(identity.id, 42);
+        assert_eq!(identity.username, "opsclaw_bot");
+        assert!(identity.is_bot);
+    }
+
+    #[test]
+    fn verify_bot_identity_rejects_username_mismatch() {
+        let mut mock = MockTelegramApi::with_updates(vec![]);
+        mock.bot_identity = Some(TelegramBotIdentity {
+            id: 42,
+            username: "opsclaw_bot".to_string(),
+            is_bot: true,
+        });
+
+        let err = verify_bot_identity(&mut mock, Some("@different_bot"))
+            .expect_err("mismatched username should fail");
+        assert!(err.contains("username mismatch"));
+    }
+
+    #[test]
+    fn verify_bot_identity_rejects_non_bot_identity() {
+        let mut mock = MockTelegramApi::with_updates(vec![]);
+        mock.bot_identity = Some(TelegramBotIdentity {
+            id: 42,
+            username: "opsclaw_bot".to_string(),
+            is_bot: false,
+        });
+
+        let err = verify_bot_identity(&mut mock, Some("opsclaw_bot"))
+            .expect_err("non-bot identity should fail");
+        assert!(err.contains("not a bot account"));
     }
 
     #[test]

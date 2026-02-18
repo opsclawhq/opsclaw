@@ -2,6 +2,29 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.1.0-phase5-telegram-onboarding-verify] - 2026-02-18
+
+### Added
+
+- Telegram onboarding verification flow:
+  - `opsclaw telegram verify` command
+  - `getMe`-backed identity validation with optional expected username check
+  - optional `--ping-chat-id` setup ping message for connectivity confirmation
+- Telegram adapter verification helper:
+  - `TelegramBotIdentity` contract
+  - `verify_bot_identity(...)` helper in `crates/opsclaw/src/telegram_adapter.rs`
+- Planning artifacts:
+  - `docs/plans/2026-02-18-phase-5-telegram-onboarding-verify-design.md`
+  - `docs/plans/2026-02-18-phase-5-telegram-onboarding-verify-slice.md`
+  - `docs/plans/evidence/2026-02-18-phase-5-telegram-onboarding-verify-slice.md`
+
+### Changed
+
+- User and architecture docs updated to include create-bot -> verify -> live operator flow:
+  - `docs/user-guide/telegram-adapter-preview.md`
+  - `docs/user-guide/setup-wizard-preview.md`
+  - `docs/architecture.md`
+
 ## [0.1.0-phase5-webhook-auth-hardening] - 2026-02-18
 
 ### Added
