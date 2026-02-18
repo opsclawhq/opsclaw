@@ -1,6 +1,6 @@
 # Multi-Platform Runtime Guide (`opsclaw run`)
 
-Phase 5 `05-08` + `05-11` adds a unified runtime core so Slack, Discord, and Telegram events can be processed by one squad response engine and relayed through live platform APIs.
+Phase 5 `05-08` + `05-11` + `05-12` adds a unified runtime core so Slack, Discord, and Telegram events can be processed by one squad response engine and relayed through live platform APIs.
 
 ## One-Shot Event Processing
 
@@ -79,8 +79,26 @@ printf '%s\n' \
   | cargo run -p opsclaw -- run stdio --template sre-squad --max-events 1
 ```
 
+## Continuous Live Relay Loop
+
+`run live-stdio` reads newline-delimited inbound events and dispatches each to live platform handlers:
+
+```bash
+printf '%s\n' \
+  '{"platform":"slack","payload_json":"{\"type\":\"url_verification\",\"challenge\":\"challenge-123\"}","identity":"U_BOT"}' \
+  '{"platform":"discord","payload_json":"{\"type\":1}","identity":null}' \
+  '{"platform":"telegram","payload_json":"{\"message\":{\"chat\":{\"id\":42,\"type\":\"private\"},\"text\":\"\"}}","identity":"opsclaw_bot"}' \
+  | cargo run -p opsclaw -- run live-stdio \
+      --template sre-squad \
+      --slack-bot-token "$SLACK_BOT_TOKEN" \
+      --discord-bot-token "$DISCORD_BOT_TOKEN" \
+      --telegram-bot-token "$TELEGRAM_BOT_TOKEN" \
+      --max-events 3
+```
+
 ## Relationship to `opsclaw telegram live`
 
 - `opsclaw telegram live` is the production Telegram transport loop.
 - `opsclaw run route-event` is the shared platform-agnostic runtime contract for route/response parity testing.
 - `opsclaw run live-event` is the runtime-level live relay bridge for Slack/Discord/Telegram API posting paths.
+- `opsclaw run live-stdio` is the always-on NDJSON relay loop for mixed multi-platform live events in one process.
