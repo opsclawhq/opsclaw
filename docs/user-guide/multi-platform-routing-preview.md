@@ -1,6 +1,6 @@
 # Multi-Platform Runtime Guide (`opsclaw run`)
 
-Phase 5 `05-08` + `05-11` + `05-12` + `05-13` + `05-14` + `05-16` + `05-17` adds a unified runtime core so Slack, Discord, and Telegram events can be processed by one squad response engine and relayed through live platform APIs.
+Phase 5 `05-08` + `05-11` + `05-12` + `05-13` + `05-14` + `05-16` + `05-17` + `05-18` adds a unified runtime core so Slack, Discord, and Telegram events can be processed by one squad response engine and relayed through live platform APIs.
 
 ## One-Shot Event Processing
 
@@ -184,3 +184,24 @@ Behavior:
 - when `--slack-signing-secret` is set, Slack requests must provide valid `X-Slack-Signature` and `X-Slack-Request-Timestamp`
 - invalid or missing signature/timestamp returns `401`
 - stale timestamps outside `--slack-signature-tolerance-seconds` return `401`
+
+### Optional Discord Signature Verification
+
+Enable Discord-native interaction signature verification:
+
+```bash
+cargo run -p opsclaw -- run serve-webhooks \
+  --bind 127.0.0.1:8787 \
+  --discord-public-key "$DISCORD_PUBLIC_KEY" \
+  --discord-signature-tolerance-seconds 300 \
+  --slack-bot-user-id U_BOT \
+  --telegram-bot-username opsclaw_bot \
+  --slack-bot-token "$SLACK_BOT_TOKEN" \
+  --discord-bot-token "$DISCORD_BOT_TOKEN" \
+  --telegram-bot-token "$TELEGRAM_BOT_TOKEN"
+```
+
+Behavior:
+- when `--discord-public-key` is set, `/discord/interactions` requests must provide valid `X-Signature-Ed25519` and `X-Signature-Timestamp`
+- invalid or missing signature/timestamp returns `401`
+- stale timestamps outside `--discord-signature-tolerance-seconds` return `401`

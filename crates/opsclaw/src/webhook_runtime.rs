@@ -1,4 +1,5 @@
 use std::collections::VecDeque;
+use ed25519_dalek::{Signature as Ed25519Signature, Verifier, VerifyingKey};
 use hmac::{Hmac, Mac};
 use sha2::Sha256;
 
@@ -139,9 +140,71 @@ fn compute_slack_signature(
     Ok(format!("v0={}", hex::encode(digest)))
 }
 
+pub fn verify_discord_request_signature(
+    request_body: &str,
+    provided_signature: Option<&str>,
+    provided_timestamp: Option<&str>,
+    discord_public_key: Option<&str>,
+    now_epoch_seconds: u64,
+    tolerance_seconds: u64,
+) -> Result<(), String> {
+    let public_key = match discord_public_key.map(str::trim).filter(|value| !value.is_empty()) {
+        Some(value) => value,
+        None => return Ok(()),
+    };
+
+    if tolerance_seconds == 0 {
+        return Err("discord signature tolerance seconds must be greater than zero".to_string());
+    }
+
+    let timestamp = provided_timestamp
+        .map(str::trim)
+        .filter(|value| !value.is_empty())
+        .ok_or_else(|| "missing discord request timestamp".to_string())?;
+
+    let timestamp_seconds: u64 = timestamp
+        .parse()
+        .map_err(|_| "invalid discord request timestamp".to_string())?;
+
+    let drift_seconds = now_epoch_seconds.abs_diff(timestamp_seconds);
+    if drift_seconds > tolerance_seconds {
+        return Err(format!(
+            "stale discord request timestamp (drift={drift_seconds}s tolerance={tolerance_seconds}s)"
+        ));
+    }
+
+    let signature = provided_signature
+        .map(str::trim)
+        .filter(|value| !value.is_empty())
+        .ok_or_else(|| "missing discord request signature".to_string())?;
+
+    let public_key_bytes = hex::decode(public_key)
+        .map_err(|_| "invalid discord public key encoding".to_string())?;
+    let public_key_array: [u8; 32] = public_key_bytes
+        .try_into()
+        .map_err(|_| "invalid discord public key length".to_string())?;
+    let verifying_key = VerifyingKey::from_bytes(&public_key_array)
+        .map_err(|_| "invalid discord public key".to_string())?;
+
+    let signature_bytes = hex::decode(signature)
+        .map_err(|_| "invalid discord request signature encoding".to_string())?;
+    let signature_array: [u8; 64] = signature_bytes
+        .try_into()
+        .map_err(|_| "invalid discord request signature length".to_string())?;
+    let parsed_signature = Ed25519Signature::from_bytes(&signature_array);
+
+    let signed_payload = format!("{timestamp}{request_body}");
+    verifying_key
+        .verify(signed_payload.as_bytes(), &parsed_signature)
+        .map_err(|_| "invalid discord request signature".to_string())?;
+
+    Ok(())
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+    use ed25519_dalek::{Signer, SigningKey};
 
     #[test]
     fn resolves_supported_paths() {
@@ -269,5 +332,76 @@ mod tests {
             300,
         )
         .expect("signature verification should be disabled");
+    }
+
+    #[test]
+    fn discord_signature_rejects_mismatch() {
+        let signing_key = SigningKey::from_bytes(&[3u8; 32]);
+        let verifying_key = signing_key.verifying_key();
+        let public_key_hex = hex::encode(verifying_key.as_bytes());
+        let mismatched_signature = "00".repeat(64);
+        let err = verify_discord_request_signature(
+            "{\"type\":1}",
+            Some(mismatched_signature.as_str()),
+            Some("1700000000"),
+            Some(public_key_hex.as_str()),
+            1700000010,
+            300,
+        )
+        .expect_err("mismatched signature should fail");
+
+        assert!(err.contains("invalid discord request signature"));
+    }
+
+    #[test]
+    fn discord_signature_accepts_valid_signature() {
+        let signing_key = SigningKey::from_bytes(&[7u8; 32]);
+        let verifying_key = signing_key.verifying_key();
+        let public_key_hex = hex::encode(verifying_key.as_bytes());
+        let body = "{\"type\":1}";
+        let timestamp = "1700000000";
+        let signed_payload = format!("{timestamp}{body}");
+        let signature = signing_key.sign(signed_payload.as_bytes());
+        let signature_hex = hex::encode(signature.to_bytes());
+
+        verify_discord_request_signature(
+            body,
+            Some(signature_hex.as_str()),
+            Some(timestamp),
+            Some(public_key_hex.as_str()),
+            1700000010,
+            300,
+        )
+        .expect("valid discord signature should pass");
+    }
+
+    #[test]
+    fn discord_signature_rejects_stale_timestamp() {
+        let signing_key = SigningKey::from_bytes(&[9u8; 32]);
+        let verifying_key = signing_key.verifying_key();
+        let public_key_hex = hex::encode(verifying_key.as_bytes());
+        let body = "{\"type\":1}";
+        let timestamp = "1700000000";
+        let signed_payload = format!("{timestamp}{body}");
+        let signature = signing_key.sign(signed_payload.as_bytes());
+        let signature_hex = hex::encode(signature.to_bytes());
+
+        let err = verify_discord_request_signature(
+            body,
+            Some(signature_hex.as_str()),
+            Some(timestamp),
+            Some(public_key_hex.as_str()),
+            1700000900,
+            300,
+        )
+        .expect_err("stale discord signature should fail");
+
+        assert!(err.contains("stale discord request timestamp"));
+    }
+
+    #[test]
+    fn discord_signature_allows_when_public_key_not_configured() {
+        verify_discord_request_signature("{}", None, None, None, 1700000000, 300)
+            .expect("discord signature verification should be disabled");
     }
 }
