@@ -205,3 +205,23 @@ Behavior:
 - when `--discord-public-key` is set, `/discord/interactions` requests must provide valid `X-Signature-Ed25519` and `X-Signature-Timestamp`
 - invalid or missing signature/timestamp returns `401`
 - stale timestamps outside `--discord-signature-tolerance-seconds` return `401`
+
+### Optional Telegram Webhook Secret Verification
+
+Enable Telegram webhook secret-token verification:
+
+```bash
+cargo run -p opsclaw -- run serve-webhooks \
+  --bind 127.0.0.1:8787 \
+  --telegram-webhook-secret-token "$TELEGRAM_WEBHOOK_SECRET_TOKEN" \
+  --slack-bot-user-id U_BOT \
+  --telegram-bot-username opsclaw_bot \
+  --slack-bot-token "$SLACK_BOT_TOKEN" \
+  --discord-bot-token "$DISCORD_BOT_TOKEN" \
+  --telegram-bot-token "$TELEGRAM_BOT_TOKEN"
+```
+
+Behavior:
+- when `--telegram-webhook-secret-token` is set, `/telegram/webhook` requests must provide `X-Telegram-Bot-Api-Secret-Token`
+- invalid or missing secret token returns `401`
+- when secret token is not configured, Telegram token verification is disabled

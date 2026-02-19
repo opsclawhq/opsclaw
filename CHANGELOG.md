@@ -2,6 +2,27 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.1.0-phase5-telegram-signature-hardening] - 2026-02-19
+
+### Added
+
+- Telegram webhook secret-token verification controls for `opsclaw run serve-webhooks`:
+  - `--telegram-webhook-secret-token`
+  - `401` JSON errors for missing/invalid `X-Telegram-Bot-Api-Secret-Token` on `/telegram/webhook`
+- Webhook runtime helper:
+  - `verify_telegram_webhook_secret(...)` in `crates/opsclaw/src/webhook_runtime.rs`
+  - unit tests for valid/missing/mismatched/disabled secret-token scenarios
+- Planning artifacts:
+  - `docs/plans/2026-02-19-phase-5-telegram-signature-hardening-design.md`
+  - `docs/plans/2026-02-19-phase-5-telegram-signature-hardening-slice.md`
+  - `docs/plans/evidence/2026-02-19-phase-5-telegram-signature-hardening-slice.md`
+
+### Changed
+
+- Runtime and architecture docs updated for Telegram webhook secret-token verification:
+  - `docs/user-guide/multi-platform-routing-preview.md`
+  - `docs/architecture.md`
+
 ## [0.1.0-phase5-discord-signature-hardening] - 2026-02-19
 
 ### Added
