@@ -2,6 +2,28 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.1.0-phase5-webhook-signature-hardening] - 2026-02-18
+
+### Added
+
+- Slack webhook signature verification controls for `opsclaw run serve-webhooks`:
+  - `--slack-signing-secret`
+  - `--slack-signature-tolerance-seconds`
+  - `401` JSON errors for missing/invalid Slack signature headers and stale timestamps
+- Webhook runtime helper:
+  - `verify_slack_request_signature(...)` in `crates/opsclaw/src/webhook_runtime.rs`
+  - unit tests for valid/mismatched/stale/disabled signature scenarios
+- Planning artifacts:
+  - `docs/plans/2026-02-18-phase-5-webhook-signature-hardening-design.md`
+  - `docs/plans/2026-02-18-phase-5-webhook-signature-hardening-slice.md`
+  - `docs/plans/evidence/2026-02-18-phase-5-webhook-signature-hardening-slice.md`
+
+### Changed
+
+- Runtime and architecture docs updated for Slack signature verification:
+  - `docs/user-guide/multi-platform-routing-preview.md`
+  - `docs/architecture.md`
+
 ## [0.1.0-phase5-webhook-rate-limit-hardening] - 2026-02-18
 
 ### Added

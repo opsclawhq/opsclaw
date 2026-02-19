@@ -1,4 +1,6 @@
 use std::collections::VecDeque;
+use hmac::{Hmac, Mac};
+use sha2::Sha256;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum WebhookPlatform {
@@ -75,6 +77,68 @@ pub fn enforce_rate_limit(
     Ok(())
 }
 
+pub fn verify_slack_request_signature(
+    request_body: &str,
+    provided_signature: Option<&str>,
+    provided_timestamp: Option<&str>,
+    signing_secret: Option<&str>,
+    now_epoch_seconds: u64,
+    tolerance_seconds: u64,
+) -> Result<(), String> {
+    let secret = match signing_secret.map(str::trim).filter(|value| !value.is_empty()) {
+        Some(value) => value,
+        None => return Ok(()),
+    };
+
+    if tolerance_seconds == 0 {
+        return Err("slack signature tolerance seconds must be greater than zero".to_string());
+    }
+
+    let timestamp = provided_timestamp
+        .map(str::trim)
+        .filter(|value| !value.is_empty())
+        .ok_or_else(|| "missing slack request timestamp".to_string())?;
+
+    let timestamp_seconds: u64 = timestamp
+        .parse()
+        .map_err(|_| "invalid slack request timestamp".to_string())?;
+
+    let drift_seconds = now_epoch_seconds.abs_diff(timestamp_seconds);
+    if drift_seconds > tolerance_seconds {
+        return Err(format!(
+            "stale slack request timestamp (drift={drift_seconds}s tolerance={tolerance_seconds}s)"
+        ));
+    }
+
+    let signature = provided_signature
+        .map(str::trim)
+        .filter(|value| !value.is_empty())
+        .ok_or_else(|| "missing slack request signature".to_string())?;
+
+    let expected_signature = compute_slack_signature(request_body, timestamp, secret)?;
+    if !signature.eq_ignore_ascii_case(expected_signature.as_str()) {
+        return Err("invalid slack request signature".to_string());
+    }
+
+    Ok(())
+}
+
+fn compute_slack_signature(
+    request_body: &str,
+    timestamp: &str,
+    signing_secret: &str,
+) -> Result<String, String> {
+    type HmacSha256 = Hmac<Sha256>;
+
+    let mut mac = HmacSha256::new_from_slice(signing_secret.as_bytes())
+        .map_err(|err| format!("failed to initialize slack signature verifier: {err}"))?;
+    let base_string = format!("v0:{timestamp}:{request_body}");
+    mac.update(base_string.as_bytes());
+
+    let digest = mac.finalize().into_bytes();
+    Ok(format!("v0={}", hex::encode(digest)))
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -139,5 +203,71 @@ mod tests {
         enforce_rate_limit(&mut timestamps, 4, None, 60)
             .expect("missing max limit should disable limiting");
         assert_eq!(timestamps, VecDeque::from(vec![1, 2, 3]));
+    }
+
+    #[test]
+    fn slack_signature_rejects_mismatch() {
+        let err = verify_slack_request_signature(
+            "{\"type\":\"url_verification\"}",
+            Some("v0=deadbeef"),
+            Some("1700000000"),
+            Some("signing-secret"),
+            1700000010,
+            300,
+        )
+        .expect_err("mismatched signature should fail");
+
+        assert!(err.contains("invalid slack request signature"));
+    }
+
+    #[test]
+    fn slack_signature_accepts_valid_signature() {
+        let body = "{\"type\":\"url_verification\"}";
+        let timestamp = "1700000000";
+        let signature =
+            compute_slack_signature(body, timestamp, "signing-secret").expect("signature");
+
+        verify_slack_request_signature(
+            body,
+            Some(signature.as_str()),
+            Some(timestamp),
+            Some("signing-secret"),
+            1700000010,
+            300,
+        )
+        .expect("valid signature should pass");
+    }
+
+    #[test]
+    fn slack_signature_rejects_stale_timestamp() {
+        let body = "{\"type\":\"url_verification\"}";
+        let timestamp = "1700000000";
+        let signature =
+            compute_slack_signature(body, timestamp, "signing-secret").expect("signature");
+
+        let err = verify_slack_request_signature(
+            body,
+            Some(signature.as_str()),
+            Some(timestamp),
+            Some("signing-secret"),
+            1700000900,
+            300,
+        )
+        .expect_err("stale signature should fail");
+
+        assert!(err.contains("stale slack request timestamp"));
+    }
+
+    #[test]
+    fn slack_signature_allows_when_secret_not_configured() {
+        verify_slack_request_signature(
+            "{}",
+            None,
+            None,
+            None,
+            1700000000,
+            300,
+        )
+        .expect("signature verification should be disabled");
     }
 }
