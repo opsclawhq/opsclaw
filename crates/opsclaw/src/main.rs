@@ -4,6 +4,7 @@ mod discord_adapter;
 mod ipc_socket;
 mod live_runtime;
 mod mcp_stdio;
+mod retry_runtime;
 mod setup_wizard;
 mod skill_install;
 mod slack_adapter;
@@ -20,6 +21,7 @@ use discord_adapter::{
     DiscordRouteDecision, HttpDiscordApi,
 };
 use live_runtime::run_live_stdio_loop;
+use retry_runtime::{compute_retry_backoff_millis, is_retryable_live_error};
 use slack_adapter::{
     build_install_url, handle_live_event as handle_slack_live_event,
     resolve_bot_token as resolve_slack_bot_token,
@@ -304,6 +306,10 @@ enum RunCommands {
         webhook_rate_limit_max_requests: Option<usize>,
         #[arg(long, default_value_t = 60)]
         webhook_rate_limit_window_seconds: u64,
+        #[arg(long, default_value_t = 1)]
+        live_retry_max_attempts: usize,
+        #[arg(long, default_value_t = 250)]
+        live_retry_backoff_millis: u64,
         #[arg(long)]
         slack_bot_user_id: String,
         #[arg(long)]
@@ -971,6 +977,8 @@ fn main() {
                 telegram_webhook_secret_token,
                 webhook_rate_limit_max_requests,
                 webhook_rate_limit_window_seconds,
+                live_retry_max_attempts,
+                live_retry_backoff_millis,
                 slack_bot_user_id,
                 telegram_bot_username,
                 slack_bot_token,
@@ -1000,6 +1008,20 @@ fn main() {
                 if webhook_rate_limit_window_seconds == 0 {
                     eprintln!(
                         "run serve-webhooks failed: --webhook-rate-limit-window-seconds must be greater than zero"
+                    );
+                    std::process::exit(1);
+                }
+
+                if live_retry_max_attempts == 0 {
+                    eprintln!(
+                        "run serve-webhooks failed: --live-retry-max-attempts must be greater than zero"
+                    );
+                    std::process::exit(1);
+                }
+
+                if live_retry_backoff_millis == 0 {
+                    eprintln!(
+                        "run serve-webhooks failed: --live-retry-backoff-millis must be greater than zero"
                     );
                     std::process::exit(1);
                 }
@@ -1287,63 +1309,92 @@ fn main() {
                         }
                     }
 
-                    let decision = (|| -> Result<serde_json::Value, String> {
-                        match platform_from_path(request_path.as_str())? {
-                            WebhookPlatform::Slack => {
-                                if slack_api.is_none() {
-                                    let token = resolve_slack_bot_token(
-                                        slack_bot_token.as_deref(),
-                                        Some(slack_bot_token_env.as_str()),
-                                        "SLACK_BOT_TOKEN",
-                                    )?;
-                                    slack_api = Some(HttpSlackApi::new(token)?);
-                                }
+                    let mut attempt: u32 = 1;
+                    let decision = loop {
+                        let result = (|| -> Result<serde_json::Value, String> {
+                            match platform_from_path(request_path.as_str())? {
+                                WebhookPlatform::Slack => {
+                                    if slack_api.is_none() {
+                                        let token = resolve_slack_bot_token(
+                                            slack_bot_token.as_deref(),
+                                            Some(slack_bot_token_env.as_str()),
+                                            "SLACK_BOT_TOKEN",
+                                        )?;
+                                        slack_api = Some(HttpSlackApi::new(token)?);
+                                    }
 
-                                let decision = handle_slack_live_event(
-                                    slack_api.as_mut().expect("slack api initialized"),
-                                    payload_json.as_str(),
-                                    slack_bot_user_id.as_str(),
-                                    template.as_str(),
-                                )?;
-                                Ok(slack_live_decision_to_json(decision))
+                                    let decision = handle_slack_live_event(
+                                        slack_api.as_mut().expect("slack api initialized"),
+                                        payload_json.as_str(),
+                                        slack_bot_user_id.as_str(),
+                                        template.as_str(),
+                                    )?;
+                                    Ok(slack_live_decision_to_json(decision))
+                                }
+                                WebhookPlatform::Discord => {
+                                    if discord_api.is_none() {
+                                        let token = resolve_discord_bot_token(
+                                            discord_bot_token.as_deref(),
+                                            Some(discord_bot_token_env.as_str()),
+                                            "DISCORD_BOT_TOKEN",
+                                        )?;
+                                        discord_api = Some(HttpDiscordApi::new(token)?);
+                                    }
+
+                                    let decision = handle_discord_live_event(
+                                        discord_api.as_mut().expect("discord api initialized"),
+                                        payload_json.as_str(),
+                                        template.as_str(),
+                                    )?;
+                                    Ok(discord_live_decision_to_json(decision))
+                                }
+                                WebhookPlatform::Telegram => {
+                                    if telegram_api.is_none() {
+                                        let token = resolve_telegram_bot_token(
+                                            telegram_bot_token.as_deref(),
+                                            Some(telegram_bot_token_env.as_str()),
+                                            "TELEGRAM_BOT_TOKEN",
+                                        )?;
+                                        telegram_api = Some(HttpTelegramApi::new(token)?);
+                                    }
+
+                                    let decision = handle_telegram_live_event(
+                                        telegram_api.as_mut().expect("telegram api initialized"),
+                                        payload_json.as_str(),
+                                        telegram_bot_username.as_str(),
+                                        template.as_str(),
+                                    )?;
+                                    Ok(telegram_live_decision_to_json(decision))
+                                }
                             }
-                            WebhookPlatform::Discord => {
-                                if discord_api.is_none() {
-                                    let token = resolve_discord_bot_token(
-                                        discord_bot_token.as_deref(),
-                                        Some(discord_bot_token_env.as_str()),
-                                        "DISCORD_BOT_TOKEN",
-                                    )?;
-                                    discord_api = Some(HttpDiscordApi::new(token)?);
+                        })();
+
+                        match result {
+                            Ok(value) => break Ok(value),
+                            Err(err) => {
+                                if (attempt as usize) >= live_retry_max_attempts
+                                    || !is_retryable_live_error(err.as_str())
+                                {
+                                    break Err(err);
                                 }
 
-                                let decision = handle_discord_live_event(
-                                    discord_api.as_mut().expect("discord api initialized"),
-                                    payload_json.as_str(),
-                                    template.as_str(),
-                                )?;
-                                Ok(discord_live_decision_to_json(decision))
-                            }
-                            WebhookPlatform::Telegram => {
-                                if telegram_api.is_none() {
-                                    let token = resolve_telegram_bot_token(
-                                        telegram_bot_token.as_deref(),
-                                        Some(telegram_bot_token_env.as_str()),
-                                        "TELEGRAM_BOT_TOKEN",
-                                    )?;
-                                    telegram_api = Some(HttpTelegramApi::new(token)?);
-                                }
-
-                                let decision = handle_telegram_live_event(
-                                    telegram_api.as_mut().expect("telegram api initialized"),
-                                    payload_json.as_str(),
-                                    telegram_bot_username.as_str(),
-                                    template.as_str(),
-                                )?;
-                                Ok(telegram_live_decision_to_json(decision))
+                                let delay_millis = compute_retry_backoff_millis(
+                                    attempt,
+                                    live_retry_backoff_millis,
+                                    err.as_str(),
+                                );
+                                eprintln!(
+                                    "run serve-webhooks: live dispatch retry attempt={}/{} delay_ms={} error={}",
+                                    attempt + 1,
+                                    live_retry_max_attempts,
+                                    delay_millis,
+                                    err
+                                );
+                                std::thread::sleep(std::time::Duration::from_millis(delay_millis));
+                                attempt = attempt.saturating_add(1);
                             }
                         }
-                    })();
+                    };
 
                     let (status, body) = match decision {
                         Ok(value) => (200, value),
