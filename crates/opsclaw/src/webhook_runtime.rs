@@ -201,6 +201,30 @@ pub fn verify_discord_request_signature(
     Ok(())
 }
 
+pub fn verify_telegram_webhook_secret(
+    provided_secret_token: Option<&str>,
+    configured_secret_token: Option<&str>,
+) -> Result<(), String> {
+    let expected = match configured_secret_token
+        .map(str::trim)
+        .filter(|value| !value.is_empty())
+    {
+        Some(value) => value,
+        None => return Ok(()),
+    };
+
+    let provided = provided_secret_token
+        .map(str::trim)
+        .filter(|value| !value.is_empty())
+        .ok_or_else(|| "missing telegram webhook secret token".to_string())?;
+
+    if provided != expected {
+        return Err("invalid telegram webhook secret token".to_string());
+    }
+
+    Ok(())
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -403,5 +427,36 @@ mod tests {
     fn discord_signature_allows_when_public_key_not_configured() {
         verify_discord_request_signature("{}", None, None, None, 1700000000, 300)
             .expect("discord signature verification should be disabled");
+    }
+
+    #[test]
+    fn telegram_signature_rejects_mismatch() {
+        let err = verify_telegram_webhook_secret(
+            Some("wrong-token"),
+            Some("expected-token"),
+        )
+        .expect_err("mismatched telegram secret should fail");
+
+        assert!(err.contains("invalid telegram webhook secret token"));
+    }
+
+    #[test]
+    fn telegram_signature_rejects_missing_secret() {
+        let err = verify_telegram_webhook_secret(None, Some("expected-token"))
+            .expect_err("missing telegram secret token should fail");
+
+        assert!(err.contains("missing telegram webhook secret token"));
+    }
+
+    #[test]
+    fn telegram_signature_accepts_matching_secret() {
+        verify_telegram_webhook_secret(Some("expected-token"), Some("expected-token"))
+            .expect("matching telegram secret token should pass");
+    }
+
+    #[test]
+    fn telegram_signature_allows_when_secret_not_configured() {
+        verify_telegram_webhook_secret(None, None)
+            .expect("telegram secret verification should be disabled");
     }
 }

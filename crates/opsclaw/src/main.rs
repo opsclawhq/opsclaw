@@ -43,7 +43,8 @@ use telegram_adapter::{
 };
 use webhook_runtime::{
     enforce_rate_limit, platform_from_path, validate_shared_secret,
-    verify_discord_request_signature, verify_slack_request_signature, WebhookPlatform,
+    verify_discord_request_signature, verify_slack_request_signature,
+    verify_telegram_webhook_secret, WebhookPlatform,
 };
 
 #[derive(Parser)]
@@ -297,6 +298,8 @@ enum RunCommands {
         discord_public_key: Option<String>,
         #[arg(long, default_value_t = 300)]
         discord_signature_tolerance_seconds: u64,
+        #[arg(long)]
+        telegram_webhook_secret_token: Option<String>,
         #[arg(long)]
         webhook_rate_limit_max_requests: Option<usize>,
         #[arg(long, default_value_t = 60)]
@@ -965,6 +968,7 @@ fn main() {
                 slack_signature_tolerance_seconds,
                 discord_public_key,
                 discord_signature_tolerance_seconds,
+                telegram_webhook_secret_token,
                 webhook_rate_limit_max_requests,
                 webhook_rate_limit_window_seconds,
                 slack_bot_user_id,
@@ -1152,6 +1156,19 @@ fn main() {
                         }
                     });
 
+                    let telegram_request_secret_token = request.headers().iter().find_map(|header| {
+                        if header
+                            .field
+                            .as_str()
+                            .to_string()
+                            .eq_ignore_ascii_case("X-Telegram-Bot-Api-Secret-Token")
+                        {
+                            Some(header.value.as_str().to_string())
+                        } else {
+                            None
+                        }
+                    });
+
                     if let Err(err) = validate_shared_secret(
                         provided_shared_secret.as_deref(),
                         webhook_shared_secret.as_deref(),
@@ -1232,6 +1249,27 @@ fn main() {
                             discord_public_key.as_deref(),
                             now_epoch_seconds,
                             discord_signature_tolerance_seconds,
+                        ) {
+                            let response =
+                                tiny_http::Response::from_string(serde_json::json!({ "error": err }).to_string())
+                                    .with_status_code(tiny_http::StatusCode(401))
+                                    .with_header(
+                                        tiny_http::Header::from_bytes(
+                                            &b"Content-Type"[..],
+                                            &b"application/json"[..],
+                                        )
+                                        .expect("content-type header should build"),
+                                    );
+                            let _ = request.respond(response);
+                            requests_processed += 1;
+                            continue;
+                        }
+                    }
+
+                    if request_path.as_str() == "/telegram/webhook" {
+                        if let Err(err) = verify_telegram_webhook_secret(
+                            telegram_request_secret_token.as_deref(),
+                            telegram_webhook_secret_token.as_deref(),
                         ) {
                             let response =
                                 tiny_http::Response::from_string(serde_json::json!({ "error": err }).to_string())
