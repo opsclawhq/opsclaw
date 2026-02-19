@@ -2,6 +2,31 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.1.0-phase5-live-retry-hardening] - 2026-02-19
+
+### Added
+
+- Live relay retry controls for `opsclaw run serve-webhooks`:
+  - `--live-retry-max-attempts`
+  - `--live-retry-backoff-millis`
+- Retry policy module:
+  - `crates/opsclaw/src/retry_runtime.rs`
+  - retryable error classification
+  - retry-after parsing (`retry_after_seconds=<n>`)
+  - exponential backoff delay computation
+- Slack transport now emits rate-limit metadata in transient request failures:
+  - `status=<code>` and optional `retry_after_seconds=<n>`
+- Planning artifacts:
+  - `docs/plans/2026-02-19-phase-5-live-retry-hardening-design.md`
+  - `docs/plans/2026-02-19-phase-5-live-retry-hardening-slice.md`
+  - `docs/plans/evidence/2026-02-19-phase-5-live-retry-hardening-slice.md`
+
+### Changed
+
+- Runtime webhook docs and architecture docs now include bounded retry/backoff controls:
+  - `docs/user-guide/multi-platform-routing-preview.md`
+  - `docs/architecture.md`
+
 ## [0.1.0-phase5-telegram-signature-hardening] - 2026-02-19
 
 ### Added

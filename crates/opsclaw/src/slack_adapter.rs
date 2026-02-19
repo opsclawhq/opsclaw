@@ -85,13 +85,25 @@ impl SlackApi for HttpSlackApi {
             payload["thread_ts"] = serde_json::json!(thread_ts);
         }
 
-        let response = self
+        let response = match self
             .client
             .post(SLACK_CHAT_POST_MESSAGE_URL)
             .set("Authorization", format!("Bearer {}", self.bot_token).as_str())
             .set("Content-Type", "application/json")
             .send_json(payload)
-            .map_err(|err| format!("slack chat.postMessage request failed: {err}"))?;
+        {
+            Ok(value) => value,
+            Err(ureq::Error::Status(status, response)) => {
+                let retry_after = retry_after_seconds(status, response.header("Retry-After"));
+                if let Some(seconds) = retry_after {
+                    return Err(format!(
+                        "slack chat.postMessage request failed: status={status} retry_after_seconds={seconds}"
+                    ));
+                }
+                return Err(format!("slack chat.postMessage request failed: status={status}"));
+            }
+            Err(err) => return Err(format!("slack chat.postMessage request failed: {err}")),
+        };
 
         let parsed: Value = response
             .into_json()

@@ -225,3 +225,25 @@ Behavior:
 - when `--telegram-webhook-secret-token` is set, `/telegram/webhook` requests must provide `X-Telegram-Bot-Api-Secret-Token`
 - invalid or missing secret token returns `401`
 - when secret token is not configured, Telegram token verification is disabled
+
+### Optional Live Retry Backoff Controls
+
+Enable bounded retries for transient live relay failures:
+
+```bash
+cargo run -p opsclaw -- run serve-webhooks \
+  --bind 127.0.0.1:8787 \
+  --live-retry-max-attempts 3 \
+  --live-retry-backoff-millis 250 \
+  --slack-bot-user-id U_BOT \
+  --telegram-bot-username opsclaw_bot \
+  --slack-bot-token "$SLACK_BOT_TOKEN" \
+  --discord-bot-token "$DISCORD_BOT_TOKEN" \
+  --telegram-bot-token "$TELEGRAM_BOT_TOKEN"
+```
+
+Behavior:
+- retries are bounded by `--live-retry-max-attempts`
+- retryable errors include transport/request failures and rate-limit responses
+- if an error exposes `retry_after_seconds=<n>`, runtime backs off for `n * 1000` ms
+- otherwise runtime uses exponential backoff from `--live-retry-backoff-millis`
