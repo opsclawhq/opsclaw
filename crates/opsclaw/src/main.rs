@@ -41,7 +41,10 @@ use telegram_adapter::{
     verify_bot_identity, HttpTelegramApi, TelegramApi, TelegramInlineButton, TelegramLiveConfig,
     TelegramLiveDecision, TelegramLiveOutcome, TelegramOutgoingMessage, TelegramRouteDecision,
 };
-use webhook_runtime::{enforce_rate_limit, platform_from_path, validate_shared_secret, WebhookPlatform};
+use webhook_runtime::{
+    enforce_rate_limit, platform_from_path, validate_shared_secret, verify_slack_request_signature,
+    WebhookPlatform,
+};
 
 #[derive(Parser)]
 #[command(name = "opsclaw", version)]
@@ -53,6 +56,7 @@ struct Cli {
 }
 
 #[derive(Subcommand)]
+#[allow(clippy::large_enum_variant)]
 enum Commands {
     Init {
         #[arg(long, value_enum, default_value_t = setup_wizard::Template::SreSquad)]
@@ -285,6 +289,10 @@ enum RunCommands {
         webhook_shared_secret: Option<String>,
         #[arg(long, default_value = "X-OpsClaw-Webhook-Secret")]
         webhook_secret_header: String,
+        #[arg(long)]
+        slack_signing_secret: Option<String>,
+        #[arg(long, default_value_t = 300)]
+        slack_signature_tolerance_seconds: u64,
         #[arg(long)]
         webhook_rate_limit_max_requests: Option<usize>,
         #[arg(long, default_value_t = 60)]
@@ -949,6 +957,8 @@ fn main() {
                 max_requests,
                 webhook_shared_secret,
                 webhook_secret_header,
+                slack_signing_secret,
+                slack_signature_tolerance_seconds,
                 webhook_rate_limit_max_requests,
                 webhook_rate_limit_window_seconds,
                 slack_bot_user_id,
@@ -980,6 +990,13 @@ fn main() {
                 if webhook_rate_limit_window_seconds == 0 {
                     eprintln!(
                         "run serve-webhooks failed: --webhook-rate-limit-window-seconds must be greater than zero"
+                    );
+                    std::process::exit(1);
+                }
+
+                if slack_signature_tolerance_seconds == 0 {
+                    eprintln!(
+                        "run serve-webhooks failed: --slack-signature-tolerance-seconds must be greater than zero"
                     );
                     std::process::exit(1);
                 }
@@ -1070,6 +1087,32 @@ fn main() {
                         }
                     });
 
+                    let slack_request_signature = request.headers().iter().find_map(|header| {
+                        if header
+                            .field
+                            .as_str()
+                            .to_string()
+                            .eq_ignore_ascii_case("X-Slack-Signature")
+                        {
+                            Some(header.value.as_str().to_string())
+                        } else {
+                            None
+                        }
+                    });
+
+                    let slack_request_timestamp = request.headers().iter().find_map(|header| {
+                        if header
+                            .field
+                            .as_str()
+                            .to_string()
+                            .eq_ignore_ascii_case("X-Slack-Request-Timestamp")
+                        {
+                            Some(header.value.as_str().to_string())
+                        } else {
+                            None
+                        }
+                    });
+
                     if let Err(err) = validate_shared_secret(
                         provided_shared_secret.as_deref(),
                         webhook_shared_secret.as_deref(),
@@ -1115,6 +1158,31 @@ fn main() {
                         let _ = request.respond(response);
                         requests_processed += 1;
                         continue;
+                    }
+
+                    if request_path.as_str() == "/slack/events" {
+                        if let Err(err) = verify_slack_request_signature(
+                            payload_json.as_str(),
+                            slack_request_signature.as_deref(),
+                            slack_request_timestamp.as_deref(),
+                            slack_signing_secret.as_deref(),
+                            now_epoch_seconds,
+                            slack_signature_tolerance_seconds,
+                        ) {
+                            let response =
+                                tiny_http::Response::from_string(serde_json::json!({ "error": err }).to_string())
+                                    .with_status_code(tiny_http::StatusCode(401))
+                                    .with_header(
+                                        tiny_http::Header::from_bytes(
+                                            &b"Content-Type"[..],
+                                            &b"application/json"[..],
+                                        )
+                                        .expect("content-type header should build"),
+                                    );
+                            let _ = request.respond(response);
+                            requests_processed += 1;
+                            continue;
+                        }
                     }
 
                     let decision = (|| -> Result<serde_json::Value, String> {
