@@ -2,6 +2,28 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.1.0-phase5-discord-signature-hardening] - 2026-02-19
+
+### Added
+
+- Discord interaction signature verification controls for `opsclaw run serve-webhooks`:
+  - `--discord-public-key`
+  - `--discord-signature-tolerance-seconds`
+  - `401` JSON errors for missing/invalid Discord signature headers and stale timestamps
+- Webhook runtime helper:
+  - `verify_discord_request_signature(...)` in `crates/opsclaw/src/webhook_runtime.rs`
+  - unit tests for valid/mismatched/stale/disabled signature scenarios
+- Planning artifacts:
+  - `docs/plans/2026-02-19-phase-5-discord-signature-hardening-design.md`
+  - `docs/plans/2026-02-19-phase-5-discord-signature-hardening-slice.md`
+  - `docs/plans/evidence/2026-02-19-phase-5-discord-signature-hardening-slice.md`
+
+### Changed
+
+- Runtime and architecture docs updated for Discord signature verification:
+  - `docs/user-guide/multi-platform-routing-preview.md`
+  - `docs/architecture.md`
+
 ## [0.1.0-phase5-webhook-signature-hardening] - 2026-02-18
 
 ### Added
