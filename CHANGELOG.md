@@ -2,6 +2,27 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.1.0-phase5-kpi-measurement-automation] - 2026-02-19
+
+### Added
+
+- KPI measurement automation scripts:
+  - `scripts/planning/compute-kpi-snapshot.sh`
+  - `scripts/planning/apply-kpi-snapshot.sh`
+- End-to-end measured KPI snapshot flow:
+  - compute measured values from GitHub telemetry
+  - apply values across local metadata contracts and GitHub Project items
+  - strict audits pass with `placeholders=0` (no override)
+- Planning artifacts:
+  - `docs/plans/2026-02-19-phase-5-kpi-measurement-automation-design.md`
+  - `docs/plans/2026-02-19-phase-5-kpi-measurement-automation-slice.md`
+  - `docs/plans/evidence/2026-02-19-phase-5-kpi-measurement-automation-slice.md`
+
+### Changed
+
+- KPI telemetry hardening guide now includes measured KPI compute/apply workflow:
+  - `docs/developer-guide/kpi-telemetry-hardening.md`
+
 ## [0.1.0-phase5-live-retry-hardening] - 2026-02-19
 
 ### Added
